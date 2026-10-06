@@ -29,8 +29,9 @@ def handle_create_room(data):
         emit('error', {'message': 'Room already exists.'})
         return
 
-    # Create room without adding host as a active playing participant
     room = GameRoom(room_id, request.sid, sb, bb)
+    if not hasattr(room, 'pending_add_cash'):
+        room.pending_add_cash = []
     rooms[room_id] = room
 
     join_room(room_id)
@@ -50,18 +51,36 @@ def handle_join_request(data):
     room = rooms[room_id]
     join_room(room_id)
 
-    room.pending_joins.append({
-        'sid': request.sid,
-        'name': player_name,
-        'buy_in': buy_in
-    })
-
-    socketio.emit('pending_requests_update', {
-        'pending_joins': room.pending_joins,
-        'pending_add_cash': getattr(room, 'pending_add_cash', [])
-    }, to=room.host_sid)
+    # Avoid duplicate pending requests from same socket
+    if not any(p['sid'] == request.sid for p in room.pending_joins):
+        room.pending_joins.append({
+            'sid': request.sid,
+            'name': player_name,
+            'buy_in': buy_in
+        })
 
     emit('join_pending', {'message': 'Waiting for host approval...'})
+    broadcast_room_state(room_id)
+
+@socketio.on('request_add_cash')
+def handle_request_add_cash(data):
+    room_id = data.get('room_id')
+    amount = float(data.get('amount', 0.0))
+    if room_id not in rooms or amount <= 0:
+        return
+
+    room = rooms[room_id]
+    if request.sid in room.players:
+        player_name = room.players[request.sid].name
+        if not hasattr(room, 'pending_add_cash'):
+            room.pending_add_cash = []
+        room.pending_add_cash.append({
+            'sid': request.sid,
+            'name': player_name,
+            'amount': amount
+        })
+        emit('notification', {'title': 'Request Sent', 'message': f'Requested ${amount} cash top-up.'})
+        broadcast_room_state(room_id)
 
 @socketio.on('approve_join')
 def handle_approve_join(data):
@@ -79,9 +98,30 @@ def handle_approve_join(data):
     if pending:
         room.add_player(pending['sid'], pending['name'], pending['buy_in'])
         room.pending_joins.remove(pending)
-
         socketio.emit('join_approved', {'room_id': room_id}, to=target_sid)
         broadcast_room_state(room_id)
+
+@socketio.on('approve_add_cash')
+def handle_approve_add_cash(data):
+    room_id = data.get('room_id')
+    target_sid = data.get('sid')
+    amount = float(data.get('amount', 0.0))
+
+    if room_id not in rooms:
+        return
+    room = rooms[room_id]
+
+    if request.sid != room.host_sid:
+        return
+
+    if hasattr(room, 'pending_add_cash'):
+        req = next((c for c in room.pending_add_cash if c['sid'] == target_sid and c['amount'] == amount), None)
+        if req:
+            if target_sid in room.players:
+                room.players[target_sid].chips += amount
+            room.pending_add_cash.remove(req)
+            socketio.emit('notification', {'title': 'Cash Approved', 'message': f'Host approved ${amount} chip top-up!'}, to=target_sid)
+            broadcast_room_state(room_id)
 
 @socketio.on('start_hand')
 def handle_start_hand(data):
@@ -98,7 +138,7 @@ def handle_start_hand(data):
         emit('error', {'message': msg})
         return
 
-    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'The dealer has shuffled and dealt the cards!'}, to=room_id)
+    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'Hand has begun!'}, to=room_id)
     broadcast_room_state(room_id)
 
 @socketio.on('player_action')
@@ -111,18 +151,10 @@ def handle_player_action(data):
         return
     room = rooms[room_id]
 
-    prev_street = room.street
     success, msg = room.process_action(request.sid, action, amount)
     if not success:
         emit('error', {'message': msg})
         return
-
-    # Notify on community card deal / street progression
-    if prev_street != room.street and room.street in ['FLOP', 'TURN', 'RIVER']:
-        socketio.emit('notification', {
-            'title': f'{room.street} Dealt',
-            'message': f'Community cards updated for the {room.street.lower()}!'
-        }, to=room_id)
 
     broadcast_room_state(room_id)
 
@@ -137,7 +169,6 @@ def broadcast_room_state(room_id):
 
     last_hand_summary = getattr(room, 'last_hand_summary', 'No hands played yet.')
 
-    # Broadcast state tailored per connection
     for sid in list(room.players.keys()) + [room.host_sid]:
         is_host = (sid == room.host_sid)
         players_data = []
@@ -151,7 +182,7 @@ def broadcast_room_state(room_id):
                     'chips': p.chips,
                     'current_bet': p.current_bet,
                     'folded': getattr(p, 'folded', False),
-                    'is_dealer': (p_sid == room.dealer_sid if hasattr(room, 'dealer_sid') else False),
+                    'is_dealer': (p_sid == getattr(room, 'dealer_sid', None)),
                     'hole_cards': [c.to_dict() for c in p.hole_cards] if show_cards and hasattr(p, 'hole_cards') else []
                 })
 
@@ -165,16 +196,11 @@ def broadcast_room_state(room_id):
             'community_cards': [c.to_dict() for c in room.community_cards] if hasattr(room, 'community_cards') else [],
             'current_turn_sid': active_turn_sid,
             'players': players_data,
-            'last_hand_summary': last_hand_summary
+            'last_hand_summary': last_hand_summary,
+            'pending_joins': room.pending_joins if is_host else [],
+            'pending_add_cash': getattr(room, 'pending_add_cash', []) if is_host else []
         }
         socketio.emit('game_state', state, to=sid)
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    for room_id, room in list(rooms.items()):
-        if request.sid in room.players:
-            room.remove_player(request.sid, reason="disconnected")
-            broadcast_room_state(room_id)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
