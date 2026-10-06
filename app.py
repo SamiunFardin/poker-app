@@ -6,10 +6,9 @@ from poker_engine import GameRoom
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'poker-secret-key-123'
 
-# Standard threading mode avoids C-extension dependencies on Render
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
-rooms = {}  # room_id -> GameRoom instance
+rooms = {}
 
 @app.route('/')
 def index():
@@ -18,20 +17,20 @@ def index():
 @socketio.on('create_room')
 def handle_create_room(data):
     room_id = data.get('room_id', '').strip().upper()
-    host_name = data.get('host_name', 'Host').strip()
+    host_name = data.get('host_name', 'Host Admin').strip()
     sb = float(data.get('sb', 10))
     bb = float(data.get('bb', 20))
 
     if not room_id:
-        emit('error', {'message': 'Room code cannot be empty.'})
+        emit('error', {'message': 'Room code required.'})
         return
 
     if room_id in rooms:
         emit('error', {'message': 'Room already exists.'})
         return
 
+    # Create room without adding host as a active playing participant
     room = GameRoom(room_id, request.sid, sb, bb)
-    room.add_player(request.sid, host_name, 1000.0)  # Default starting chips
     rooms[room_id] = room
 
     join_room(room_id)
@@ -51,7 +50,6 @@ def handle_join_request(data):
     room = rooms[room_id]
     join_room(room_id)
 
-    # Add player to pending joins for host approval
     room.pending_joins.append({
         'sid': request.sid,
         'name': player_name,
@@ -60,7 +58,7 @@ def handle_join_request(data):
 
     socketio.emit('pending_requests_update', {
         'pending_joins': room.pending_joins,
-        'pending_add_cash': room.pending_add_cash
+        'pending_add_cash': getattr(room, 'pending_add_cash', [])
     }, to=room.host_sid)
 
     emit('join_pending', {'message': 'Waiting for host approval...'})
@@ -100,6 +98,7 @@ def handle_start_hand(data):
         emit('error', {'message': msg})
         return
 
+    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'The dealer has shuffled and dealt the cards!'}, to=room_id)
     broadcast_room_state(room_id)
 
 @socketio.on('player_action')
@@ -112,10 +111,18 @@ def handle_player_action(data):
         return
     room = rooms[room_id]
 
+    prev_street = room.street
     success, msg = room.process_action(request.sid, action, amount)
     if not success:
         emit('error', {'message': msg})
         return
+
+    # Notify on community card deal / street progression
+    if prev_street != room.street and room.street in ['FLOP', 'TURN', 'RIVER']:
+        socketio.emit('notification', {
+            'title': f'{room.street} Dealt',
+            'message': f'Community cards updated for the {room.street.lower()}!'
+        }, to=room_id)
 
     broadcast_room_state(room_id)
 
@@ -124,18 +131,41 @@ def broadcast_room_state(room_id):
         return
     room = rooms[room_id]
 
-    # Send tailored state to each connected client in the room
-    for sid, player in room.players.items():
+    active_turn_sid = None
+    if room.in_progress and room.current_turn_idx >= 0 and room.current_turn_idx < len(room.player_order):
+        active_turn_sid = room.player_order[room.current_turn_idx]
+
+    last_hand_summary = getattr(room, 'last_hand_summary', 'No hands played yet.')
+
+    # Broadcast state tailored per connection
+    for sid in list(room.players.keys()) + [room.host_sid]:
+        is_host = (sid == room.host_sid)
+        players_data = []
+        for p_sid in room.player_order:
+            if p_sid in room.players:
+                p = room.players[p_sid]
+                show_cards = (p.sid == sid or room.street == 'SHOWDOWN')
+                players_data.append({
+                    'sid': p.sid,
+                    'name': p.name,
+                    'chips': p.chips,
+                    'current_bet': p.current_bet,
+                    'folded': getattr(p, 'folded', False),
+                    'is_dealer': (p_sid == room.dealer_sid if hasattr(room, 'dealer_sid') else False),
+                    'hole_cards': [c.to_dict() for c in p.hole_cards] if show_cards and hasattr(p, 'hole_cards') else []
+                })
+
         state = {
             'room_id': room.room_id,
-            'is_host': (sid == room.host_sid),
+            'is_host': is_host,
             'in_progress': room.in_progress,
             'street': room.street,
             'pot': room.pot,
             'highest_bet': room.highest_bet,
-            'community_cards': [c.to_dict() for c in room.community_cards],
-            'current_turn_sid': list(room.players.keys())[room.current_turn_idx] if room.in_progress and room.current_turn_idx >= 0 else None,
-            'players': [p.to_dict(show_cards=(p.sid == sid or room.street == 'SHOWDOWN')) for p in room.players.values()]
+            'community_cards': [c.to_dict() for c in room.community_cards] if hasattr(room, 'community_cards') else [],
+            'current_turn_sid': active_turn_sid,
+            'players': players_data,
+            'last_hand_summary': last_hand_summary
         }
         socketio.emit('game_state', state, to=sid)
 
