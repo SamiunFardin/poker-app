@@ -30,8 +30,8 @@ def handle_create_room(data):
         return
 
     room = GameRoom(room_id, request.sid, sb, bb)
-    if not hasattr(room, 'pending_add_cash'):
-        room.pending_add_cash = []
+    room.pending_joins = []
+    room.pending_add_cash = []
     rooms[room_id] = room
 
     join_room(room_id)
@@ -45,46 +45,46 @@ def handle_join_request(data):
     buy_in = float(data.get('buy_in', 1000.0))
 
     if room_id not in rooms:
-        emit('error', {'message': 'Room not found.'})
+        emit('error', {'message': 'Room code does not exist.'})
         return
 
     room = rooms[room_id]
     join_room(room_id)
 
-    # Avoid duplicate pending requests from same socket
-    if not any(p['sid'] == request.sid for p in room.pending_joins):
+    # Check if request already pending from this socket
+    existing = next((p for p in room.pending_joins if p['sid'] == request.sid), None)
+    if not existing:
         room.pending_joins.append({
             'sid': request.sid,
             'name': player_name,
             'buy_in': buy_in
         })
 
-    emit('join_pending', {'message': 'Waiting for host approval...'})
+    emit('join_pending', {'message': 'Request sent! Waiting for host approval...'})
     broadcast_room_state(room_id)
 
 @socketio.on('request_add_cash')
 def handle_request_add_cash(data):
-    room_id = data.get('room_id')
+    room_id = data.get('room_id', '').strip().upper()
     amount = float(data.get('amount', 0.0))
+
     if room_id not in rooms or amount <= 0:
         return
 
     room = rooms[room_id]
     if request.sid in room.players:
         player_name = room.players[request.sid].name
-        if not hasattr(room, 'pending_add_cash'):
-            room.pending_add_cash = []
         room.pending_add_cash.append({
             'sid': request.sid,
             'name': player_name,
             'amount': amount
         })
-        emit('notification', {'title': 'Request Sent', 'message': f'Requested ${amount} cash top-up.'})
+        emit('notification', {'title': 'Request Sent', 'message': f'Requested ${amount} additional chips.'})
         broadcast_room_state(room_id)
 
 @socketio.on('approve_join')
 def handle_approve_join(data):
-    room_id = data.get('room_id')
+    room_id = data.get('room_id', '').strip().upper()
     target_sid = data.get('sid')
 
     if room_id not in rooms:
@@ -103,7 +103,7 @@ def handle_approve_join(data):
 
 @socketio.on('approve_add_cash')
 def handle_approve_add_cash(data):
-    room_id = data.get('room_id')
+    room_id = data.get('room_id', '').strip().upper()
     target_sid = data.get('sid')
     amount = float(data.get('amount', 0.0))
 
@@ -114,18 +114,17 @@ def handle_approve_add_cash(data):
     if request.sid != room.host_sid:
         return
 
-    if hasattr(room, 'pending_add_cash'):
-        req = next((c for c in room.pending_add_cash if c['sid'] == target_sid and c['amount'] == amount), None)
-        if req:
-            if target_sid in room.players:
-                room.players[target_sid].chips += amount
-            room.pending_add_cash.remove(req)
-            socketio.emit('notification', {'title': 'Cash Approved', 'message': f'Host approved ${amount} chip top-up!'}, to=target_sid)
-            broadcast_room_state(room_id)
+    req = next((c for c in room.pending_add_cash if c['sid'] == target_sid and c['amount'] == amount), None)
+    if req:
+        if target_sid in room.players:
+            room.players[target_sid].chips += amount
+        room.pending_add_cash.remove(req)
+        socketio.emit('notification', {'title': 'Cash Approved', 'message': f'Host approved ${amount} chip top-up!'}, to=target_sid)
+        broadcast_room_state(room_id)
 
 @socketio.on('start_hand')
 def handle_start_hand(data):
-    room_id = data.get('room_id')
+    room_id = data.get('room_id', '').strip().upper()
     if room_id not in rooms:
         return
     room = rooms[room_id]
@@ -138,12 +137,12 @@ def handle_start_hand(data):
         emit('error', {'message': msg})
         return
 
-    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'Hand has begun!'}, to=room_id)
+    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'Cards dealt!'}, to=room_id)
     broadcast_room_state(room_id)
 
 @socketio.on('player_action')
 def handle_player_action(data):
-    room_id = data.get('room_id')
+    room_id = data.get('room_id', '').strip().upper()
     action = data.get('action')
     amount = float(data.get('amount', 0.0))
 
@@ -169,7 +168,10 @@ def broadcast_room_state(room_id):
 
     last_hand_summary = getattr(room, 'last_hand_summary', 'No hands played yet.')
 
-    for sid in list(room.players.keys()) + [room.host_sid]:
+    # Send directly to host socket and all players
+    all_sids = set(list(room.players.keys()) + [room.host_sid])
+
+    for sid in all_sids:
         is_host = (sid == room.host_sid)
         players_data = []
         for p_sid in room.player_order:
@@ -197,8 +199,8 @@ def broadcast_room_state(room_id):
             'current_turn_sid': active_turn_sid,
             'players': players_data,
             'last_hand_summary': last_hand_summary,
-            'pending_joins': room.pending_joins if is_host else [],
-            'pending_add_cash': getattr(room, 'pending_add_cash', []) if is_host else []
+            'pending_joins': room.pending_joins,
+            'pending_add_cash': room.pending_add_cash
         }
         socketio.emit('game_state', state, to=sid)
 
