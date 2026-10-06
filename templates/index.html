@@ -86,10 +86,10 @@
         .seat-4 { top: 30px; right: 3%; }
         .seat-5 { bottom: 30px; right: 3%; }
 
-        .request-item {
+        .request-card {
+            background: #252525; padding: 10px 15px; border-radius: 8px;
+            margin: 8px 0; border-left: 4px solid var(--accent-gold);
             display: flex; justify-content: space-between; align-items: center;
-            background: #2a2a2a; padding: 8px 12px; border-radius: 6px; margin: 6px 0;
-            border: 1px solid var(--accent-gold);
         }
 
         .modal-overlay {
@@ -126,19 +126,20 @@
     <!-- GAME SECTION -->
     <div id="game-section" class="card-panel hidden">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Room: <span id="display-room-id"></span> <span id="host-indicator" class="hidden" style="color: var(--accent-gold); font-size: 14px;">(Host Admin)</span></h2>
+            <h2>Room Code: <span id="display-room-id" style="color: var(--accent-gold);"></span> <span id="host-indicator" class="hidden" style="color: #2ecc71; font-size: 14px;">(Host Admin Mode)</span></h2>
             <div>
                 <button id="btn-add-cash-req" class="hidden">Request Add Cash</button>
                 <button id="btn-view-last-hand">View Last Hand</button>
             </div>
         </div>
 
-        <!-- HOST CONTROL BOX -->
-        <div id="host-controls" class="card-panel hidden" style="border: 2px dashed var(--accent-gold); background: #181818;">
-            <h3 style="color: var(--accent-gold); margin-top:0;">Host Management Panel</h3>
-            <button id="btn-start-hand" style="font-size: 16px; padding: 12px 20px;">Start Next Hand</button>
-            <div id="pending-requests-section" style="margin-top: 15px;">
-                <h4 style="margin: 5px 0;">Pending Requests:</h4>
+        <!-- HOST CONTROL PANEL -->
+        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #161616;">
+            <h3 style="color: var(--accent-gold); margin-top: 0;">Host Control Panel</h3>
+            <button id="btn-start-hand" style="font-size: 16px; padding: 10px 24px;">Start Next Hand</button>
+            
+            <div style="margin-top: 15px;">
+                <h4 style="margin: 5px 0; color: #fff;">Pending Approvals (<span id="request-count">0</span>):</h4>
                 <div id="pending-requests-list"></div>
             </div>
         </div>
@@ -164,7 +165,7 @@
     </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL POPUP -->
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
@@ -249,7 +250,7 @@
         document.getElementById('popup-modal').classList.add('hidden');
     });
 
-    // SOCKET LISTENERS
+    // SOCKET EVENT LISTENERS
     socket.on('room_created', (data) => {
         isHost = true;
         document.getElementById('lobby-section').classList.add('hidden');
@@ -275,46 +276,50 @@
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
         document.getElementById('pot-amount').innerText = state.pot;
 
-        // Render Requests explicitly for Host
+        // Render Pending Requests explicitly for Host Admin
         if (state.is_host) {
             const listContainer = document.getElementById('pending-requests-list');
             listContainer.innerHTML = '';
-            let hasRequests = false;
 
-            if (state.pending_joins && state.pending_joins.length > 0) {
-                hasRequests = true;
-                state.pending_joins.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = 'request-item';
-                    div.innerHTML = `<span><strong>Join Request:</strong> ${p.name} ($${p.buy_in})</span>`;
+            const joins = state.pending_joins || [];
+            const cashes = state.pending_add_cash || [];
+            
+            document.getElementById('request-count').innerText = joins.length + cashes.length;
 
+            if (joins.length === 0 && cashes.length === 0) {
+                listContainer.innerHTML = '<p style="color:#aaa; font-size:13px;">No pending requests right now.</p>';
+            } else {
+                joins.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'request-card';
+                    card.innerHTML = `
+                        <div>
+                            <strong>Player Join Request:</strong> ${p.name}<br>
+                            <small style="color:#aaa;">Starting Buy-In: $${p.buy_in}</small>
+                        </div>
+                    `;
                     const btn = document.createElement('button');
                     btn.innerText = 'Approve Join';
                     btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
-
-                    div.appendChild(btn);
-                    listContainer.appendChild(div);
+                    card.appendChild(btn);
+                    listContainer.appendChild(card);
                 });
-            }
 
-            if (state.pending_add_cash && state.pending_add_cash.length > 0) {
-                hasRequests = true;
-                state.pending_add_cash.forEach(c => {
-                    const div = document.createElement('div');
-                    div.className = 'request-item';
-                    div.innerHTML = `<span><strong>Cash Request:</strong> ${c.name} (+$${c.amount})</span>`;
-
+                cashes.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'request-card';
+                    card.innerHTML = `
+                        <div>
+                            <strong>Chip Request:</strong> ${c.name}<br>
+                            <small style="color:#aaa;">Amount: +$${c.amount}</small>
+                        </div>
+                    `;
                     const btn = document.createElement('button');
                     btn.innerText = 'Approve Cash';
                     btn.onclick = () => socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount });
-
-                    div.appendChild(btn);
-                    listContainer.appendChild(div);
+                    card.appendChild(btn);
+                    listContainer.appendChild(card);
                 });
-            }
-
-            if (!hasRequests) {
-                listContainer.innerHTML = '<p style="color:#aaa; font-size:13px; margin:5px 0;">No pending requests.</p>';
             }
         }
 
@@ -336,7 +341,7 @@
 
             seatsContainer.innerHTML += `
                 <div class="seat seat-${idx % 6} ${isTurn ? 'active-turn' : ''}">
-                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span class="dealer-chip">D</span>' : ''}</div>
+                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:2px 5px; border-radius:50%; font-size:10px;">D</span>' : ''}</div>
                     <div>Chips: $${p.chips}</div>
                     <div>Bet: $${p.current_bet} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
                     <div style="display:flex; justify-content:center; gap:4px; margin-top:5px;">${cardsHtml}</div>
@@ -344,7 +349,7 @@
             `;
         });
 
-        // Action controls enabled only during player's turn
+        // Toggle action panel based on active turn
         if (!isHost) {
             const myTurn = (socket.id === state.current_turn_sid);
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
