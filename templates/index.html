@@ -1,224 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloud Poker Night</title>
-  <script src="https://cdn.socket.io/4.7.5/socketio.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
-    .card-panel { background: #1e293b; padding: 20px; border-radius: 12px; width: 100%; max-width: 900px; margin-bottom: 20px; border: 1px solid #334155; }
-    .btn { background: #2563eb; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; }
-    .btn:hover { background: #1d4ed8; }
-    .btn-danger { background: #dc2626; } .btn-danger:hover { background: #b91c1c; }
-    .btn-success { background: #16a34a; } .btn-success:hover { background: #15803d; }
-    
-    /* Poker Table Design */
-    .poker-table { background: #065f46; border: 12px solid #042f2e; border-radius: 150px; width: 100%; height: 380px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px 0; border-shadow: inset 0 0 50px #000; }
-    .pot-display { font-size: 1.4rem; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; color: #fbbf24; margin-bottom: 15px; }
-    .community-cards { display: flex; gap: 8px; min-height: 70px; }
-    .poker-card { background: white; color: black; border-radius: 6px; width: 48px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 1px solid #ccc; }
-    .poker-card.red { color: #dc2626; }
-    
-    /* Seating layout */
-    .seats-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
-    .seat { position: absolute; background: #1e293b; border: 2px solid #38bdf8; border-radius: 8px; padding: 8px 12px; text-align: center; pointer-events: auto; width: 120px; }
-    .seat.active-turn { border-color: #f59e0b; box-shadow: 0 0 15px #f59e0b; }
-    
-    /* Positions around table oval */
-    .seat-0 { bottom: 10px; left: 43%; }
-    .seat-1 { top: 10px; left: 43%; }
-    .seat-2 { top: 30%; left: 10px; }
-    .seat-3 { top: 30%; right: 10px; }
-
-    /* Modals */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; }
-    .modal-content { background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 500px; width: 90%; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #1b2838; color: white; }
+        .card { background-color: #2a475e; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        input, button { padding: 10px; margin: 5px 0; border-radius: 4px; border: none; }
+        button { background-color: #66c0f4; color: black; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #417a9b; color: white; }
+        .hidden { display: none; }
+        .poker-card { display: inline-block; padding: 8px 12px; background: white; color: black; font-weight: bold; border-radius: 4px; margin-right: 5px; }
+    </style>
 </head>
 <body>
 
-  <h1>Cloud Texas Hold'em</h1>
+    <h1>Texas Hold'em Poker</h1>
 
-  <!-- Lobby Screen -->
-  <div id="lobby-panel" class="card-panel">
-    <h3>Join or Create Room</h3>
-    <input type="text" id="room-code-input" placeholder="Room Code (e.g. PKR1)" style="padding: 8px; margin: 10px 0;">
-    <input type="text" id="player-name-input" placeholder="Your Name" style="padding: 8px; margin: 10px 0;">
-    <input type="number" id="buyin-input" placeholder="Buy-in Amount ($)" value="100" style="padding: 8px; margin: 10px 0;">
-    <br>
-    <button class="btn" onclick="createRoom()">Create Room (Host)</button>
-    <button class="btn btn-success" onclick="requestJoin()">Join Room (Player)</button>
-  </div>
-
-  <!-- Game Table Screen -->
-  <div id="game-panel" class="card-panel" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Room Code: <span id="display-room-code"></span></h2>
-      <div id="host-controls" style="display: none;">
-        <button class="btn btn-success" onclick="startHand()">Start Hand</button>
-        <button class="btn btn-danger" onclick="discontinueHand()">Discontinue Hand</button>
-        <button class="btn" onclick="endGame()">End Game Session</button>
-      </div>
+    <!-- LOBBY SECTION -->
+    <div id="lobby-section" class="card">
+        <h2>Join or Host Game</h2>
+        <div>
+            <h3>Host Room</h3>
+            <input type="text" id="host-room-id" placeholder="Room Code (e.g. PKR1)">
+            <input type="text" id="host-name" placeholder="Your Name" value="Host">
+            <button id="btn-create-room">Create Room (Host)</button>
+        </div>
+        <hr>
+        <div>
+            <h3>Join Room</h3>
+            <input type="text" id="join-room-id" placeholder="Room Code">
+            <input type="text" id="join-name" placeholder="Your Name">
+            <input type="number" id="join-buyin" placeholder="Buy-in Chips" value="1000">
+            <button id="btn-join-room">Join Room (Player)</button>
+        </div>
     </div>
 
-    <!-- Table -->
-    <div class="poker-table">
-      <div class="pot-display">Pot: $<span id="pot-amount">0</span></div>
-      <div class="community-cards" id="community-cards-container"></div>
-      <div class="seats-container" id="seats-container"></div>
-    </div>
-
-    <!-- Player Action Bar -->
-    <div id="action-bar" style="text-align: center; margin-top: 15px;">
-      <h3>Your Hole Cards</h3>
-      <div class="community-cards" id="hole-cards-container" style="justify-content: center; margin: 10px 0;"></div>
-      <div>
-        <button class="btn btn-danger" onclick="sendAction('fold')">Fold</button>
-        <button class="btn" onclick="sendAction('check')">Check</button>
-        <button class="btn btn-success" onclick="sendAction('call')">Call</button>
-        <input type="number" id="raise-amount" placeholder="Raise Amount" style="width: 100px; padding: 6px;">
-        <button class="btn" onclick="sendAction('raise')">Raise</button>
-      </div>
-    </div>
-
-    <!-- Host Admin Panel -->
-    <div id="host-admin-requests" style="margin-top: 20px; display: none; border-top: 1px solid #334155; padding-top: 10px;">
-      <h3>Pending Join Requests</h3>
-      <div id="pending-requests-list"></div>
-    </div>
-  </div>
-
-  <!-- Notification Overlay Modal -->
-  <div id="modal-popup" class="modal">
-    <div class="modal-content">
-      <h2 id="modal-title">Notification</h2>
-      <p id="modal-body" style="margin: 20px 0; font-size: 1.1rem;"></p>
-      <button class="btn" onclick="closeModal()">Close</button>
-    </div>
-  </div>
-
-  <script>
-    const socket = io();
-    let currentRoomId = "";
-    let isHost = false;
-
-    function createRoom() {
-      const code = document.getElementById('room-code-input').value;
-      if (!code) return alert("Enter Room Code");
-      currentRoomId = code;
-      socket.emit('create_room', { room_id: code, sb: 10, bb: 20 });
-    }
-
-    function requestJoin() {
-      const code = document.getElementById('room-code-input').value;
-      const name = document.getElementById('player-name-input').value;
-      const buyin = document.getElementById('buyin-input').value;
-      if (!code || !name || !buyin) return alert("Fill all join fields");
-      currentRoomId = code;
-      socket.emit('request_join', { room_id: code, name: name, buyin: buyin });
-    }
-
-    socket.on('room_created', (data) => {
-      isHost = true;
-      document.getElementById('lobby-panel').style.display = 'none';
-      document.getElementById('game-panel').style.display = 'block';
-      document.getElementById('display-room-code').innerText = data.room_id;
-      document.getElementById('host-controls').style.display = 'block';
-      document.getElementById('host-admin-requests').style.display = 'block';
-    });
-
-    socket.on('join_requested', (data) => {
-      alert(data.message);
-      document.getElementById('lobby-panel').style.display = 'none';
-      document.getElementById('game-panel').style.display = 'block';
-      document.getElementById('display-room-code').innerText = currentRoomId;
-    });
-
-    socket.on('game_state_update', (state) => {
-      document.getElementById('pot-amount').innerText = state.pot;
-      
-      // Render Community Cards
-      const commContainer = document.getElementById('community-cards-container');
-      commContainer.innerHTML = '';
-      state.community_cards.forEach(c => {
-        commContainer.appendChild(createCardUI(c));
-      });
-
-      // Render Seats
-      const seatsContainer = document.getElementById('seats-container');
-      seatsContainer.innerHTML = '';
-      state.players.forEach((p, idx) => {
-        const div = document.createElement('div');
-        div.className = `seat seat-${idx % 4} ${p.sid === state.current_turn_sid ? 'active-turn' : ''}`;
-        div.innerHTML = `<strong>${p.name}</strong><br>$${p.chips}<br>${p.folded ? '[FOLDED]' : ''}`;
+    <!-- GAME SECTION -->
+    <div id="game-section" class="card hidden">
+        <h2>Room: <span id="display-room-id"></span></h2>
         
-        if (state.is_host && p.sid !== socket.id) {
-          div.innerHTML += `<br><button style="background:red;color:white;border:none;border-radius:4px;font-size:10px;" onclick="kickPlayer('${p.sid}')">Kick</button>`;
-        }
-        seatsContainer.appendChild(div);
+        <!-- HOST CONTROLS -->
+        <div id="host-controls" class="hidden">
+            <h3>Host Controls</h3>
+            <button id="btn-start-hand">Start Hand</button>
+            <div id="pending-requests"></div>
+        </div>
 
-        // Render My Hole Cards
-        if (p.sid === socket.id) {
-          const holeContainer = document.getElementById('hole-cards-container');
-          holeContainer.innerHTML = '';
-          p.hole_cards.forEach(c => holeContainer.appendChild(createCardUI(c)));
-        }
-      });
+        <!-- TABLE STATE -->
+        <h3>Community Cards: <span id="community-cards">None</span></h3>
+        <h4>Total Pot: $<span id="pot-amount">0</span> | Current Street: <span id="street-name">-</span></h4>
 
-      // Render Pending Join Requests for Host
-      if (state.is_host) {
-        const reqList = document.getElementById('pending-requests-list');
-        reqList.innerHTML = '';
-        state.pending_joins.forEach(r => {
-          reqList.innerHTML += `<div>${r.name} ($${r.buyin}) 
-            <button class="btn btn-success" onclick="respondJoin('${r.sid}', true)">Approve</button>
-            <button class="btn btn-danger" onclick="respondJoin('${r.sid}', false)">Reject</button></div>`;
+        <!-- PLAYER HOLE CARDS -->
+        <div>
+            <h3>Your Cards:</h3>
+            <div id="my-cards"></div>
+        </div>
+
+        <!-- GAME ACTIONS -->
+        <div id="action-controls" style="margin-top: 15px;">
+            <h3>Actions</h3>
+            <button id="btn-check">Check</button>
+            <button id="btn-call">Call</button>
+            <button id="btn-fold">Fold</button>
+            <br>
+            <input type="number" id="raise-amount" placeholder="Raise Amount" value="20">
+            <button id="btn-raise">Raise</button>
+        </div>
+
+        <!-- PLAYER LIST -->
+        <h3>Players at Table:</h3>
+        <ul id="player-list"></ul>
+    </div>
+
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let currentRoom = '';
+        let isHost = false;
+
+        // --- BUTTON EVENT LISTENERS ---
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+            const roomId = document.getElementById('host-room-id').value.trim();
+            const hostName = document.getElementById('host-name').value.trim();
+            if (!roomId) return alert('Enter a room code');
+            
+            currentRoom = roomId;
+            socket.emit('create_room', { room_id: roomId, host_name: hostName });
         });
-      }
 
-      if (state.notification) {
-        showModal("Game Update", state.notification);
-      }
-    });
+        document.getElementById('btn-join-room').addEventListener('click', () => {
+            const roomId = document.getElementById('join-room-id').value.trim();
+            const playerName = document.getElementById('join-name').value.trim();
+            const buyIn = parseFloat(document.getElementById('join-buyin').value) || 1000;
+            if (!roomId || !playerName) return alert('Enter Room ID and Name');
 
-    socket.on('game_ended_summary', (data) => {
-      let body = "<h3>Final Standings / Accounts</h3><table style='width:100%;margin-top:10px;'><tr><th>Player</th><th>Final Chips</th></tr>";
-      data.players.forEach(p => {
-        body += `<tr><td>${p.name}</td><td>$${p.chips}</td></tr>`;
-      });
-      body += "</table>";
-      showModal("Game Session Completed", body);
-    });
+            currentRoom = roomId;
+            socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn });
+        });
 
-    socket.on('error_msg', (d) => alert(d.message));
+        document.getElementById('btn-start-hand').addEventListener('click', () => {
+            socket.emit('start_hand', { room_id: currentRoom });
+        });
 
-    function startHand() { socket.emit('start_hand', { room_id: currentRoomId }); }
-    function discontinueHand() { socket.emit('discontinue_hand', { room_id: currentRoomId }); }
-    function sendAction(act) {
-      const amt = document.getElementById('raise-amount').value || 0;
-      socket.emit('player_action', { room_id: currentRoomId, action: act, amount: amt });
-    }
-    function respondJoin(sid, approve) { socket.emit('host_respond_join', { room_id: currentRoomId, target_sid: sid, approve: approve }); }
-    function kickPlayer(sid) { socket.emit('kick_player', { room_id: currentRoomId, target_sid: sid }); }
-    function endGame() { socket.emit('end_game', { room_id: currentRoomId }); }
+        document.getElementById('btn-check').addEventListener('click', () => sendAction('check'));
+        document.getElementById('btn-call').addEventListener('click', () => sendAction('call'));
+        document.getElementById('btn-fold').addEventListener('click', () => sendAction('fold'));
+        document.getElementById('btn-raise').addEventListener('click', () => {
+            const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
+            sendAction('raise', amt);
+        });
 
-    function createCardUI(c) {
-      const div = document.createElement('div');
-      const isRed = (c.suit === 'h' || c.suit === 'd');
-      const suits = { 's':'♠', 'h':'♥', 'd':'♦', 'c':'♣' };
-      div.className = `poker-card ${isRed ? 'red' : ''}`;
-      div.innerHTML = `<span>${c.rank}</span><span>${suits[c.suit]}</span>`;
-      return div;
-    }
+        function sendAction(actionType, amount = 0) {
+            socket.emit('player_action', { room_id: currentRoom, action: actionType, amount: amount });
+        }
 
-    function showModal(title, text) {
-      document.getElementById('modal-title').innerText = title;
-      document.getElementById('modal-body').innerHTML = text;
-      document.getElementById('modal-popup').style.display = 'flex';
-    }
-    function closeModal() { document.getElementById('modal-popup').style.display = 'none'; }
-  </script>
+        // --- SOCKET LISTENERS ---
+        socket.on('room_created', (data) => {
+            isHost = true;
+            document.getElementById('lobby-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('host-controls').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = data.room_id;
+        });
+
+        socket.on('join_pending', (data) => {
+            alert(data.message);
+        });
+
+        socket.on('join_approved', (data) => {
+            document.getElementById('lobby-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = data.room_id;
+        });
+
+        socket.on('pending_requests_update', (data) => {
+            const container = document.getElementById('pending-requests');
+            container.innerHTML = '';
+            data.pending_joins.forEach(p => {
+                const btn = document.createElement('button');
+                btn.innerText = `Approve ${p.name} ($${p.buy_in})`;
+                btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
+                container.appendChild(btn);
+            });
+        });
+
+        socket.on('game_state', (state) => {
+            document.getElementById('pot-amount').innerText = state.pot;
+            document.getElementById('street-name').innerText = state.street;
+
+            // Render Community Cards
+            const ccContainer = document.getElementById('community-cards');
+            ccContainer.innerHTML = state.community_cards.map(c => `<span class="poker-card">${c.rank}${c.suit}</span>`).join(' ') || 'None';
+
+            // Render Player List
+            const pList = document.getElementById('player-list');
+            pList.innerHTML = '';
+            state.players.forEach(p => {
+                const isTurn = (p.sid === state.current_turn_sid) ? ' <b>(Turn)</b>' : '';
+                const cards = p.hole_cards.map(c => `<span class="poker-card">${c.rank}${c.suit}</span>`).join(' ');
+                pList.innerHTML += `<li>${p.name}: $${p.chips} | Bet: $${p.current_bet} ${isTurn} ${cards}</li>`;
+            });
+
+            // Render My Cards
+            const myPlayer = state.players.find(p => p.sid === socket.id);
+            if (myPlayer && myPlayer.hole_cards) {
+                document.getElementById('my-cards').innerHTML = myPlayer.hole_cards.map(c => `<span class="poker-card">${c.rank}${c.suit}</span>`).join(' ');
+            }
+        });
+
+        socket.on('error', (err) => alert(err.message));
+    </script>
 </body>
 </html>
