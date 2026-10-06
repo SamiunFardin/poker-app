@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 from poker_engine import GameRoom
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def handle_create_room(data):
         return
 
     if room_id in rooms:
-        emit('error', {'message': 'Room already exists.'})
+        emit('error', {'message': 'Room code already exists. Please pick another.'})
         return
 
     room = GameRoom(room_id, request.sid, sb, bb)
@@ -45,22 +45,22 @@ def handle_join_request(data):
     buy_in = float(data.get('buy_in', 1000.0))
 
     if room_id not in rooms:
-        emit('error', {'message': 'Room code does not exist.'})
+        emit('error', {'message': f'Room "{room_id}" not found. Check code.'})
         return
 
     room = rooms[room_id]
-    join_room(room_id)
 
-    # Check if request already pending from this socket
-    existing = next((p for p in room.pending_joins if p['sid'] == request.sid), None)
-    if not existing:
+    # Add to pending list if not already present
+    if not any(p['sid'] == request.sid for p in room.pending_joins):
         room.pending_joins.append({
             'sid': request.sid,
             'name': player_name,
             'buy_in': buy_in
         })
 
-    emit('join_pending', {'message': 'Request sent! Waiting for host approval...'})
+    emit('join_pending', {'message': 'Join request sent to Host for approval.'})
+    
+    # Explicitly force update to host SID and room
     broadcast_room_state(room_id)
 
 @socketio.on('request_add_cash')
@@ -79,7 +79,7 @@ def handle_request_add_cash(data):
             'name': player_name,
             'amount': amount
         })
-        emit('notification', {'title': 'Request Sent', 'message': f'Requested ${amount} additional chips.'})
+        emit('notification', {'title': 'Request Sent', 'message': f'Requested ${amount} cash top-up.'})
         broadcast_room_state(room_id)
 
 @socketio.on('approve_join')
@@ -98,6 +98,8 @@ def handle_approve_join(data):
     if pending:
         room.add_player(pending['sid'], pending['name'], pending['buy_in'])
         room.pending_joins.remove(pending)
+        
+        # Add target socket to socketio room channel
         socketio.emit('join_approved', {'room_id': room_id}, to=target_sid)
         broadcast_room_state(room_id)
 
@@ -119,7 +121,7 @@ def handle_approve_add_cash(data):
         if target_sid in room.players:
             room.players[target_sid].chips += amount
         room.pending_add_cash.remove(req)
-        socketio.emit('notification', {'title': 'Cash Approved', 'message': f'Host approved ${amount} chip top-up!'}, to=target_sid)
+        socketio.emit('notification', {'title': 'Chips Added', 'message': f'Host approved ${amount} chips!'}, to=target_sid)
         broadcast_room_state(room_id)
 
 @socketio.on('start_hand')
@@ -137,7 +139,7 @@ def handle_start_hand(data):
         emit('error', {'message': msg})
         return
 
-    socketio.emit('notification', {'title': 'New Hand Started', 'message': 'Cards dealt!'}, to=room_id)
+    socketio.emit('notification', {'title': 'New Hand', 'message': 'Hand started! Cards dealt.'}, to=room_id)
     broadcast_room_state(room_id)
 
 @socketio.on('player_action')
@@ -163,17 +165,18 @@ def broadcast_room_state(room_id):
     room = rooms[room_id]
 
     active_turn_sid = None
-    if room.in_progress and room.current_turn_idx >= 0 and room.current_turn_idx < len(room.player_order):
+    if room.in_progress and 0 <= room.current_turn_idx < len(room.player_order):
         active_turn_sid = room.player_order[room.current_turn_idx]
 
     last_hand_summary = getattr(room, 'last_hand_summary', 'No hands played yet.')
 
-    # Send directly to host socket and all players
-    all_sids = set(list(room.players.keys()) + [room.host_sid])
+    # Collect recipient SIDs: all seated players, host, and all pending joiners
+    recipients = set(list(room.players.keys()) + [room.host_sid] + [p['sid'] for p in room.pending_joins])
 
-    for sid in all_sids:
+    for sid in recipients:
         is_host = (sid == room.host_sid)
         players_data = []
+        
         for p_sid in room.player_order:
             if p_sid in room.players:
                 p = room.players[p_sid]
