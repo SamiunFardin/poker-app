@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Texas Hold'em - Live Room</title>
+    <title>Texas Hold'em Poker</title>
     <style>
         :root {
             --felt-color: #12542a;
@@ -25,50 +25,104 @@
             align-items: center;
         }
 
-        .container { width: 100%; max-width: 1100px; }
-        .card-panel { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .container {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card-panel {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
         .hidden { display: none !important; }
 
         input, button {
-            padding: 10px 14px; margin: 5px; border-radius: 6px;
-            border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px;
+            padding: 10px 14px;
+            margin: 5px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 14px;
         }
 
-        button { background: #27ae60; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background: #2ecc71; }
-        button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.6; }
-        button.btn-danger { background: #c0392b; }
+        button {
+            background: #27ae60;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
 
-        /* POKER TABLE */
+        button:hover { background: #2ecc71; }
+        button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
+        button.btn-danger { background: #c0392b; }
+        button.btn-danger:hover { background: #e74c3c; }
+
+        /* POKER TABLE LAYOUT */
         .poker-table-container {
-            position: relative; width: 100%; height: 500px;
-            margin: 20px 0; display: flex; justify-content: center; align-items: center;
+            position: relative;
+            width: 100%;
+            height: 500px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .poker-table {
-            position: relative; width: 85%; height: 380px;
+            position: relative;
+            width: 85%;
+            height: 380px;
             background: radial-gradient(circle, #196f3d 0%, var(--felt-color) 85%);
-            border: 18px solid var(--table-rim); border-radius: 200px;
+            border: 18px solid var(--table-rim);
+            border-radius: 200px;
             box-shadow: inset 0 0 25px #000, 0 10px 30px rgba(0,0,0,0.8);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .pot-badge {
-            font-size: 22px; font-weight: bold; color: var(--accent-gold);
-            background: rgba(0,0,0,0.75); padding: 8px 20px; border-radius: 20px;
-            border: 1px solid var(--accent-gold); margin-bottom: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            background: rgba(0,0,0,0.75);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--accent-gold);
+            margin-bottom: 15px;
         }
 
-        .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
+        .community-cards {
+            display: flex;
+            gap: 8px;
+            min-height: var(--card-h);
+        }
 
         /* VISUAL PLAYING CARDS */
         .card-graphic {
-            width: var(--card-w); height: var(--card-h); background: #ffffff;
-            border-radius: 6px; display: inline-flex; flex-direction: column;
-            justify-content: space-between; padding: 4px; box-sizing: border-box;
-            color: #000; font-weight: bold; font-size: 14px;
-            box-shadow: 2px 3px 6px rgba(0,0,0,0.5); user-select: none;
+            width: var(--card-w);
+            height: var(--card-h);
+            background: #ffffff;
+            border-radius: 6px;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            box-sizing: border-box;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 2px 3px 6px rgba(0,0,0,0.5);
+            user-select: none;
         }
+
         .card-graphic.red { color: #e74c3c; }
         .card-graphic.black { color: #2c3e50; }
         .card-back {
@@ -76,18 +130,29 @@
             border: 2px solid #fff;
         }
 
-        /* SEATS */
+        /* SEATS AROUND THE TABLE */
         .seat {
-            position: absolute; width: 130px; background: rgba(25, 25, 25, 0.95);
-            border: 2px solid #444; border-radius: 10px; padding: 10px;
-            text-align: center; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+            position: absolute;
+            width: 130px;
+            background: rgba(25, 25, 25, 0.95);
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.7);
         }
+
         .seat.active-turn {
             border-color: var(--accent-gold);
             box-shadow: 0 0 18px var(--accent-gold);
             animation: pulse 1.5s infinite alternate;
         }
-        @keyframes pulse { from { box-shadow: 0 0 10px var(--accent-gold); } to { box-shadow: 0 0 22px var(--accent-gold); } }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 10px var(--accent-gold); }
+            to { box-shadow: 0 0 22px var(--accent-gold); }
+        }
 
         .seat-0 { bottom: -20px; left: 50%; transform: translateX(-50%); }
         .seat-1 { bottom: 30px; left: 3%; }
@@ -97,20 +162,46 @@
         .seat-5 { bottom: 30px; right: 3%; }
 
         .dealer-chip {
-            background: #fff; color: #000; font-weight: bold; border-radius: 50%;
-            width: 20px; height: 20px; display: inline-block; line-height: 20px; font-size: 11px;
+            background: #fff;
+            color: #000;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            line-height: 20px;
+            font-size: 11px;
         }
 
         /* OVERLAY MODAL */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85); display: flex;
-            justify-content: center; align-items: center; z-index: 1000;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
+
         .modal-box {
-            background: #222; padding: 25px; border-radius: 12px;
-            max-width: 500px; width: 90%; text-align: center;
+            background: #222;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
             border: 2px solid var(--accent-gold);
+        }
+
+        .request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2a2a2a;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -141,6 +232,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>Room: <span id="display-room-id"></span> <span id="host-indicator" class="hidden" style="color: var(--accent-gold); font-size: 14px;">(Host / Admin View)</span></h2>
             <div>
+                <button id="btn-add-cash-req" class="hidden">Request Add Cash</button>
                 <button id="btn-view-last-hand">View Last Hand</button>
             </div>
         </div>
@@ -164,20 +256,20 @@
             <button id="btn-raise">Raise / Bet</button>
         </div>
 
-        <!-- HOST CONTROL PANEL -->
+        <!-- HOST ADMIN PANEL -->
         <div id="host-controls" class="card-panel hidden" style="border: 1px dashed var(--accent-gold);">
-            <h3>Host Admin Panel</h3>
+            <h3>Host Management Panel</h3>
             <button id="btn-start-hand">Start Next Hand</button>
-            <div id="pending-requests" style="margin-top: 10px;"></div>
+            <div id="pending-requests" style="margin-top: 15px;"></div>
         </div>
     </div>
 </div>
 
-<!-- NOTIFICATION & SUMMARY MODAL -->
+<!-- NOTIFICATION & HISTORY MODAL -->
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
-        <p id="modal-body" style="font-size: 16px; line-height: 1.5;"></p>
+        <p id="modal-body" style="font-size: 16px; line-height: 1.5; text-align: left; white-space: pre-line;"></p>
         <button id="btn-close-modal">Dismiss</button>
     </div>
 </div>
@@ -191,7 +283,7 @@
 
     function renderCardGraphic(card) {
         if (!card) return `<div class="card-graphic card-back"></div>`;
-        const suitsMap = { 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣' };
+        const suitsMap = { 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣', '♠': '♠', '♥': '♥', '♦': '♦', '♣': '♣' };
         const symbol = suitsMap[card.suit] || card.suit;
         const isRed = ['♥', '♦', 'H', 'D'].includes(card.suit);
 
@@ -226,6 +318,13 @@
         socket.emit('start_hand', { room_id: currentRoom });
     });
 
+    document.getElementById('btn-add-cash-req').addEventListener('click', () => {
+        const amt = prompt("Enter cash amount to request:", "500");
+        if (amt && !isNaN(amt)) {
+            socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
+        }
+    });
+
     document.getElementById('btn-view-last-hand').addEventListener('click', () => {
         showModal('Last Hand History', lastHandSummaryText);
     });
@@ -252,7 +351,7 @@
         document.getElementById('popup-modal').classList.add('hidden');
     });
 
-    // SOCKET EVENTS
+    // SOCKET LISTENERS
     socket.on('room_created', (data) => {
         isHost = true;
         document.getElementById('lobby-section').classList.add('hidden');
@@ -268,6 +367,7 @@
     socket.on('join_approved', (data) => {
         document.getElementById('lobby-section').classList.add('hidden');
         document.getElementById('game-section').classList.remove('hidden');
+        document.getElementById('btn-add-cash-req').classList.remove('hidden');
         document.getElementById('display-room-id').innerText = data.room_id;
     });
 
@@ -276,6 +376,55 @@
     socket.on('game_state', (state) => {
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
         document.getElementById('pot-amount').innerText = state.pot;
+
+        // Render pending requests directly for the Host Admin
+        if (state.is_host) {
+            const container = document.getElementById('pending-requests');
+            container.innerHTML = '';
+
+            let hasRequests = false;
+
+            if (state.pending_joins && state.pending_joins.length > 0) {
+                hasRequests = true;
+                const title = document.createElement('h4');
+                title.innerText = 'Pending Player Joins:';
+                container.appendChild(title);
+
+                state.pending_joins.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'request-item';
+                    item.innerHTML = `<span>${p.name} ($${p.buy_in})</span>`;
+                    const btn = document.createElement('button');
+                    btn.innerText = 'Approve';
+                    btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
+                    item.appendChild(btn);
+                    container.appendChild(item);
+                });
+            }
+
+            if (state.pending_add_cash && state.pending_add_cash.length > 0) {
+                hasRequests = true;
+                const title = document.createElement('h4');
+                title.style.marginTop = '10px';
+                title.innerText = 'Pending Cash Requests:';
+                container.appendChild(title);
+
+                state.pending_add_cash.forEach(c => {
+                    const item = document.createElement('div');
+                    item.className = 'request-item';
+                    item.innerHTML = `<span>${c.name}: +$${c.amount}</span>`;
+                    const btn = document.createElement('button');
+                    btn.innerText = 'Approve Cash';
+                    btn.onclick = () => socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount });
+                    item.appendChild(btn);
+                    container.appendChild(item);
+                });
+            }
+
+            if (!hasRequests) {
+                container.innerHTML = '<p style="font-size:12px; color:#aaa;">No pending requests at this time.</p>';
+            }
+        }
 
         // Render Community Cards
         const ccContainer = document.getElementById('community-cards');
@@ -303,7 +452,7 @@
             `;
         });
 
-        // Enable action buttons ONLY when it is this client's turn
+        // Toggle Action Buttons strictly on active player's turn
         if (!isHost) {
             const myTurn = (socket.id === state.current_turn_sid);
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
