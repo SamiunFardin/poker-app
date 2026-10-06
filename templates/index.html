@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Texas Hold'em - Live Table</title>
+    <title>Texas Hold'em - Live Room</title>
     <style>
         :root {
-            --felt-color: #0d5c31;
-            --felt-border: #07381d;
-            --table-rim: #3d2314;
-            --accent-gold: #f39c12;
-            --card-width: 48px;
-            --card-height: 68px;
+            --felt-color: #12542a;
+            --felt-border: #0a3319;
+            --table-rim: #2d1810;
+            --accent-gold: #f1c40f;
+            --card-w: 52px;
+            --card-h: 74px;
         }
 
         body {
@@ -19,176 +19,97 @@
             background-color: #121212;
             color: #ffffff;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1100px;
-        }
-
-        .card-panel {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-
+        .container { width: 100%; max-width: 1100px; }
+        .card-panel { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
         .hidden { display: none !important; }
 
-        input, select, button {
-            padding: 10px 14px;
-            margin: 5px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: #fff;
-            font-size: 14px;
+        input, button {
+            padding: 10px 14px; margin: 5px; border-radius: 6px;
+            border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px;
         }
 
-        button {
-            background: #27ae60;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
+        button { background: #27ae60; border: none; font-weight: bold; cursor: pointer; }
         button:hover { background: #2ecc71; }
+        button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.6; }
         button.btn-danger { background: #c0392b; }
-        button.btn-danger:hover { background: #e74c3c; }
 
-        /* POKER TABLE LAYOUT */
+        /* POKER TABLE */
         .poker-table-container {
-            position: relative;
-            width: 100%;
-            height: 520px;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: relative; width: 100%; height: 500px;
+            margin: 20px 0; display: flex; justify-content: center; align-items: center;
         }
 
         .poker-table {
-            position: relative;
-            width: 85%;
-            height: 380px;
-            background: radial-gradient(circle, #157f43 0%, var(--felt-color) 80%);
-            border: 16px solid var(--table-rim);
-            border-radius: 200px;
-            box-shadow: inset 0 0 20px #000, 0 10px 25px rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            position: relative; width: 85%; height: 380px;
+            background: radial-gradient(circle, #196f3d 0%, var(--felt-color) 85%);
+            border: 18px solid var(--table-rim); border-radius: 200px;
+            box-shadow: inset 0 0 25px #000, 0 10px 30px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        .community-container {
-            text-align: center;
+        .pot-badge {
+            font-size: 22px; font-weight: bold; color: var(--accent-gold);
+            background: rgba(0,0,0,0.75); padding: 8px 20px; border-radius: 20px;
+            border: 1px solid var(--accent-gold); margin-bottom: 15px;
         }
 
-        .pot-display {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--accent-gold);
-            background: rgba(0,0,0,0.6);
-            padding: 6px 16px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
+        .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
 
-        .community-cards {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            min-height: var(--card-height);
+        /* VISUAL PLAYING CARDS */
+        .card-graphic {
+            width: var(--card-w); height: var(--card-h); background: #ffffff;
+            border-radius: 6px; display: inline-flex; flex-direction: column;
+            justify-content: space-between; padding: 4px; box-sizing: border-box;
+            color: #000; font-weight: bold; font-size: 14px;
+            box-shadow: 2px 3px 6px rgba(0,0,0,0.5); user-select: none;
         }
-
-        /* CARD STYLING (SVG Rendered) */
-        .card-img {
-            width: var(--card-width);
-            height: var(--card-height);
-            background: #fff;
-            border-radius: 4px;
-            display: inline-flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 3px;
-            box-sizing: border-box;
-            color: #000;
-            font-weight: bold;
-            font-size: 13px;
-            box-shadow: 1px 2px 5px rgba(0,0,0,0.4);
-            user-select: none;
-        }
-
-        .card-img.red { color: #d63031; }
-        .card-img.black { color: #2d3436; }
+        .card-graphic.red { color: #e74c3c; }
+        .card-graphic.black { color: #2c3e50; }
         .card-back {
-            background: repeating-linear-gradient(45deg, #b2bec3, #b2bec3 5px, #636e72 5px, #636e72 10px);
+            background: repeating-linear-gradient(135deg, #2980b9, #2980b9 8px, #3498db 8px, #3498db 16px);
             border: 2px solid #fff;
         }
 
-        /* SEAT POSITIONS AROUND THE TABLE */
+        /* SEATS */
         .seat {
-            position: absolute;
-            width: 120px;
-            background: rgba(30, 30, 30, 0.95);
-            border: 2px solid #444;
-            border-radius: 10px;
-            padding: 8px;
-            text-align: center;
-            font-size: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            position: absolute; width: 130px; background: rgba(25, 25, 25, 0.95);
+            border: 2px solid #444; border-radius: 10px; padding: 10px;
+            text-align: center; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.7);
         }
-
         .seat.active-turn {
             border-color: var(--accent-gold);
-            box-shadow: 0 0 15px var(--accent-gold);
+            box-shadow: 0 0 18px var(--accent-gold);
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse { from { box-shadow: 0 0 10px var(--accent-gold); } to { box-shadow: 0 0 22px var(--accent-gold); } }
+
+        .seat-0 { bottom: -20px; left: 50%; transform: translateX(-50%); }
+        .seat-1 { bottom: 30px; left: 3%; }
+        .seat-2 { top: 30px; left: 3%; }
+        .seat-3 { top: -20px; left: 50%; transform: translateX(-50%); }
+        .seat-4 { top: 30px; right: 3%; }
+        .seat-5 { bottom: 30px; right: 3%; }
+
+        .dealer-chip {
+            background: #fff; color: #000; font-weight: bold; border-radius: 50%;
+            width: 20px; height: 20px; display: inline-block; line-height: 20px; font-size: 11px;
         }
 
-        .seat-0 { bottom: -25px; left: 50%; transform: translateX(-50%); }
-        .seat-1 { bottom: 20px; left: 5%; }
-        .seat-2 { top: 20px; left: 5%; }
-        .seat-3 { top: -25px; left: 50%; transform: translateX(-50%); }
-        .seat-4 { top: 20px; right: 5%; }
-        .seat-5 { bottom: 20px; right: 5%; }
-
-        .dealer-btn {
-            background: #fff;
-            color: #000;
-            font-weight: bold;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 11px;
-            display: inline-block;
-            margin-left: 4px;
-        }
-
-        /* MODAL POPUPS */
+        /* OVERLAY MODAL */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
         }
-
-        .modal-content {
-            background: #222;
-            padding: 25px;
-            border-radius: 10px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
+        .modal-box {
+            background: #222; padding: 25px; border-radius: 12px;
+            max-width: 500px; width: 90%; text-align: center;
             border: 2px solid var(--accent-gold);
         }
     </style>
@@ -198,43 +119,43 @@
 <div class="container">
     <!-- LOBBY -->
     <div id="lobby-section" class="card-panel">
-        <h2>Texas Hold'em Table Lobby</h2>
+        <h2>Texas Hold'em - Game Lobby</h2>
         <div>
-            <h3>Host Control Center</h3>
+            <h3>Host Table (Admin Mode)</h3>
             <input type="text" id="host-room-id" placeholder="Room Code (e.g. TABLE1)">
-            <input type="text" id="host-name" placeholder="Host Admin Name" value="Host Admin">
+            <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
             <button id="btn-create-room">Create Table</button>
         </div>
         <hr style="border-color: #333; margin: 15px 0;">
         <div>
-            <h3>Join Table as Player</h3>
+            <h3>Join as Playing Player</h3>
             <input type="text" id="join-room-id" placeholder="Room Code">
             <input type="text" id="join-name" placeholder="Player Name">
-            <input type="number" id="join-buyin" placeholder="Starting Buy-in" value="1000">
-            <button id="btn-join-room">Join Table</button>
+            <input type="number" id="join-buyin" placeholder="Starting Chips" value="1000">
+            <button id="btn-join-room">Join Game</button>
         </div>
     </div>
 
-    <!-- GAME TABLE -->
+    <!-- GAME SECTION -->
     <div id="game-section" class="card-panel hidden">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Room: <span id="display-room-id"></span></h2>
-            <button id="btn-add-cash-req">Request Add Cash</button>
+            <h2>Room: <span id="display-room-id"></span> <span id="host-indicator" class="hidden" style="color: var(--accent-gold); font-size: 14px;">(Host / Admin View)</span></h2>
+            <div>
+                <button id="btn-view-last-hand">View Last Hand</button>
+            </div>
         </div>
 
         <!-- POKER TABLE -->
         <div class="poker-table-container">
             <div class="poker-table">
-                <div class="community-container">
-                    <div class="pot-display">Pot: $<span id="pot-amount">0</span></div>
-                    <div class="community-cards" id="community-cards"></div>
-                </div>
+                <div class="pot-badge">Total Pot: $<span id="pot-amount">0</span></div>
+                <div class="community-cards" id="community-cards"></div>
             </div>
             <div id="seats-container"></div>
         </div>
 
-        <!-- CONTROLS -->
-        <div id="action-controls" class="card-panel" style="background: #2a2a2a; text-align: center;">
+        <!-- PLAYER CONTROLS -->
+        <div id="player-action-panel" class="card-panel" style="background: #2a2a2a; text-align: center;">
             <button id="btn-check">Check</button>
             <button id="btn-call">Call</button>
             <button id="btn-fold" class="btn-danger">Fold</button>
@@ -243,21 +164,21 @@
             <button id="btn-raise">Raise / Bet</button>
         </div>
 
-        <!-- HOST CONTROL BAR -->
+        <!-- HOST CONTROL PANEL -->
         <div id="host-controls" class="card-panel hidden" style="border: 1px dashed var(--accent-gold);">
-            <h3>Host Management Panel</h3>
+            <h3>Host Admin Panel</h3>
             <button id="btn-start-hand">Start Next Hand</button>
             <div id="pending-requests" style="margin-top: 10px;"></div>
         </div>
     </div>
 </div>
 
-<!-- ANNOUNCEMENT MODAL -->
-<div id="result-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h2 id="modal-title">Hand Result</h2>
-        <p id="modal-body"></p>
-        <button id="btn-close-modal">Close</button>
+<!-- NOTIFICATION & SUMMARY MODAL -->
+<div id="popup-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
+        <p id="modal-body" style="font-size: 16px; line-height: 1.5;"></p>
+        <button id="btn-close-modal">Dismiss</button>
     </div>
 </div>
 
@@ -266,21 +187,24 @@
     const socket = io();
     let currentRoom = '';
     let isHost = false;
+    let lastHandSummaryText = "No hands played yet.";
 
-    // CARD RENDER HELPER (SVG Style)
-    function renderCard(cardObj) {
-        if (!cardObj) return `<div class="card-img card-back"></div>`;
-        const isRed = ['♥', '♦'].includes(cardObj.suit);
+    function renderCardGraphic(card) {
+        if (!card) return `<div class="card-graphic card-back"></div>`;
+        const suitsMap = { 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣' };
+        const symbol = suitsMap[card.suit] || card.suit;
+        const isRed = ['♥', '♦', 'H', 'D'].includes(card.suit);
+
         return `
-            <div class="card-img ${isRed ? 'red' : 'black'}">
-                <div>${cardObj.rank}</div>
-                <div style="text-align:center; font-size: 16px;">${cardObj.suit}</div>
-                <div style="text-align:right;">${cardObj.rank}</div>
+            <div class="card-graphic ${isRed ? 'red' : 'black'}">
+                <div>${card.rank}</div>
+                <div style="text-align:center; font-size: 18px;">${symbol}</div>
+                <div style="text-align:right;">${card.rank}</div>
             </div>
         `;
     }
 
-    // BUTTON EVENT HANDLERS
+    // ACTIONS
     document.getElementById('btn-create-room').addEventListener('click', () => {
         const roomId = document.getElementById('host-room-id').value.trim();
         const hostName = document.getElementById('host-name').value.trim();
@@ -293,7 +217,7 @@
         const roomId = document.getElementById('join-room-id').value.trim();
         const playerName = document.getElementById('join-name').value.trim();
         const buyIn = parseFloat(document.getElementById('join-buyin').value) || 1000;
-        if (!roomId || !playerName) return alert('Enter Room ID and Name');
+        if (!roomId || !playerName) return alert('Enter Room Code and Player Name');
         currentRoom = roomId;
         socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn });
     });
@@ -302,9 +226,8 @@
         socket.emit('start_hand', { room_id: currentRoom });
     });
 
-    document.getElementById('btn-add-cash-req').addEventListener('click', () => {
-        const amt = prompt("Enter cash amount to request:", "500");
-        if (amt) socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
+    document.getElementById('btn-view-last-hand').addEventListener('click', () => {
+        showModal('Last Hand History', lastHandSummaryText);
     });
 
     document.getElementById('btn-check').addEventListener('click', () => sendAction('check'));
@@ -319,20 +242,28 @@
         socket.emit('player_action', { room_id: currentRoom, action: action, amount: amount });
     }
 
+    function showModal(title, text) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-body').innerText = text;
+        document.getElementById('popup-modal').classList.remove('hidden');
+    }
+
     document.getElementById('btn-close-modal').addEventListener('click', () => {
-        document.getElementById('result-modal').classList.add('hidden');
+        document.getElementById('popup-modal').classList.add('hidden');
     });
 
-    // SOCKET LISTENERS
+    // SOCKET EVENTS
     socket.on('room_created', (data) => {
         isHost = true;
         document.getElementById('lobby-section').classList.add('hidden');
         document.getElementById('game-section').classList.remove('hidden');
         document.getElementById('host-controls').classList.remove('hidden');
+        document.getElementById('host-indicator').classList.remove('hidden');
+        document.getElementById('player-action-panel').classList.add('hidden');
         document.getElementById('display-room-id').innerText = data.room_id;
     });
 
-    socket.on('join_pending', (data) => alert(data.message));
+    socket.on('join_pending', (data) => showModal('Request Sent', data.message));
 
     socket.on('join_approved', (data) => {
         document.getElementById('lobby-section').classList.add('hidden');
@@ -340,61 +271,48 @@
         document.getElementById('display-room-id').innerText = data.room_id;
     });
 
-    socket.on('pending_requests_update', (data) => {
-        const container = document.getElementById('pending-requests');
-        container.innerHTML = '';
-        
-        data.pending_joins.forEach(p => {
-            const btn = document.createElement('button');
-            btn.innerText = `Approve ${p.name} ($${p.buy_in})`;
-            btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
-            container.appendChild(btn);
-        });
-
-        (data.pending_add_cash || []).forEach(c => {
-            const btn = document.createElement('button');
-            btn.innerText = `Approve $${c.amount} for ${c.name}`;
-            btn.onclick = () => socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount });
-            container.appendChild(btn);
-        });
-    });
+    socket.on('notification', (data) => showModal(data.title, data.message));
 
     socket.on('game_state', (state) => {
+        lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
         document.getElementById('pot-amount').innerText = state.pot;
-        
-        // Community Cards
-        const ccContainer = document.getElementById('community-cards');
-        ccContainer.innerHTML = state.community_cards.map(c => renderCard(c)).join('');
 
-        // Render Seats around the table
+        // Render Community Cards
+        const ccContainer = document.getElementById('community-cards');
+        ccContainer.innerHTML = (state.community_cards && state.community_cards.length > 0)
+            ? state.community_cards.map(c => renderCardGraphic(c)).join('')
+            : renderCardGraphic(null) + renderCardGraphic(null) + renderCardGraphic(null);
+
+        // Render Table Seats
         const seatsContainer = document.getElementById('seats-container');
         seatsContainer.innerHTML = '';
 
         state.players.forEach((p, idx) => {
-            const isCurrentTurn = (p.sid === state.current_turn_sid);
-            const cardsHtml = (p.hole_cards && p.hole_cards.length > 0) 
-                ? p.hole_cards.map(c => renderCard(c)).join('')
-                : renderCard(null) + renderCard(null);
+            const isTurn = (p.sid === state.current_turn_sid);
+            const cardsHtml = (p.hole_cards && p.hole_cards.length > 0)
+                ? p.hole_cards.map(c => renderCardGraphic(c)).join('')
+                : (state.in_progress ? renderCardGraphic(null) + renderCardGraphic(null) : '');
 
             seatsContainer.innerHTML += `
-                <div class="seat seat-${idx % 6} ${isCurrentTurn ? 'active-turn' : ''}">
-                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span class="dealer-btn">D</span>' : ''}</div>
+                <div class="seat seat-${idx % 6} ${isTurn ? 'active-turn' : ''}">
+                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span class="dealer-chip">D</span>' : ''}</div>
                     <div>Chips: $${p.chips}</div>
-                    <div>Bet: $${p.current_bet}</div>
-                    <div style="display:flex; justify-content:center; gap:3px; margin-top:4px;">${cardsHtml}</div>
+                    <div>Bet: $${p.current_bet} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
+                    <div style="display:flex; justify-content:center; gap:4px; margin-top:5px;">${cardsHtml}</div>
                 </div>
             `;
         });
 
-        // Show result modal if hand completed
-        if (state.hand_result) {
-            document.getElementById('modal-title').innerText = "Hand Complete";
-            document.getElementById('modal-body').innerText = state.hand_result;
-            document.getElementById('result-modal').classList.remove('hidden');
+        // Enable action buttons ONLY when it is this client's turn
+        if (!isHost) {
+            const myTurn = (socket.id === state.current_turn_sid);
+            document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
+                el.disabled = !myTurn;
+            });
         }
     });
 
-    socket.on('error', (err) => alert(err.message));
+    socket.on('error', (err) => showModal('Error', err.message));
 </script>
 </body>
 </html>
