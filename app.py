@@ -26,7 +26,7 @@ def handle_create_room(data):
         return
 
     if room_id in rooms:
-        emit('error', {'message': 'Room code already exists. Please pick another.'})
+        emit('error', {'message': f'Room code "{room_id}" already exists. Please pick another code.'})
         return
 
     room = GameRoom(room_id, request.sid, sb, bb)
@@ -45,13 +45,16 @@ def handle_join_request(data):
     buy_in = float(data.get('buy_in', 1000.0))
 
     if room_id not in rooms:
-        emit('error', {'message': f'Room "{room_id}" not found. Check code.'})
+        emit('error', {'message': f'Room "{room_id}" not found. Check room code.'})
         return
 
     room = rooms[room_id]
 
-    # Add to pending list if not already present
-    if not any(p['sid'] == request.sid for p in room.pending_joins):
+    # Add to pending list if not already in pending or active players
+    already_pending = any(p['sid'] == request.sid for p in room.pending_joins)
+    already_in_game = request.sid in room.players
+
+    if not already_pending and not already_in_game:
         room.pending_joins.append({
             'sid': request.sid,
             'name': player_name,
@@ -60,7 +63,7 @@ def handle_join_request(data):
 
     emit('join_pending', {'message': 'Join request sent to Host for approval.'})
     
-    # Explicitly force update to host SID and room
+    # Broadcast updated state directly so the host sees the new pending joiner
     broadcast_room_state(room_id)
 
 @socketio.on('request_add_cash')
@@ -99,7 +102,7 @@ def handle_approve_join(data):
         room.add_player(pending['sid'], pending['name'], pending['buy_in'])
         room.pending_joins.remove(pending)
         
-        # Add target socket to socketio room channel
+        # Notify player they were approved
         socketio.emit('join_approved', {'room_id': room_id}, to=target_sid)
         broadcast_room_state(room_id)
 
@@ -170,7 +173,7 @@ def broadcast_room_state(room_id):
 
     last_hand_summary = getattr(room, 'last_hand_summary', 'No hands played yet.')
 
-    # Collect recipient SIDs: all seated players, host, and all pending joiners
+    # Collect recipient SIDs: Host, seated players, and pending joiners
     recipients = set(list(room.players.keys()) + [room.host_sid] + [p['sid'] for p in room.pending_joins])
 
     for sid in recipients:
@@ -202,8 +205,8 @@ def broadcast_room_state(room_id):
             'current_turn_sid': active_turn_sid,
             'players': players_data,
             'last_hand_summary': last_hand_summary,
-            'pending_joins': room.pending_joins,
-            'pending_add_cash': room.pending_add_cash
+            'pending_joins': getattr(room, 'pending_joins', []),
+            'pending_add_cash': getattr(room, 'pending_add_cash', [])
         }
         socketio.emit('game_state', state, to=sid)
 
