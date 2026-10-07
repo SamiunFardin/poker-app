@@ -12,7 +12,6 @@ class CardModel:
         return {'rank': self.rank, 'suit': self.suit}
 
     def to_treys_str(self):
-        # Convert suit representation for treys library
         r = self.rank if self.rank != '10' else 'T'
         s = self.suit.lower()
         return f"{r}{s}"
@@ -53,6 +52,7 @@ class GameRoom:
         self.dealer_sid = None
         self.deck = []
         self.last_hand_summary = "No hands played yet."
+        self.last_event_notice = None
 
     def add_player(self, sid, session_id, name, chips):
         player = Player(sid, session_id, name, chips)
@@ -64,12 +64,14 @@ class GameRoom:
     def rebind_socket(self, old_sid, new_sid, session_id):
         if session_id in self.session_map:
             p = self.session_map[session_id]
-            if p.sid in self.players:
-                del self.players[p.sid]
+            old_p_sid = p.sid
+            if old_p_sid in self.players:
+                del self.players[old_p_sid]
             p.sid = new_sid
             self.players[new_sid] = p
-            if old_sid in self.player_order:
-                idx = self.player_order.index(old_sid)
+            
+            if old_p_sid in self.player_order:
+                idx = self.player_order.index(old_p_sid)
                 self.player_order[idx] = new_sid
             elif new_sid not in self.player_order:
                 self.player_order.append(new_sid)
@@ -90,7 +92,6 @@ class GameRoom:
             if sid in self.player_order:
                 self.player_order.remove(sid)
             
-            # Remove from pending requests if any
             self.pending_joins = [j for j in self.pending_joins if j['sid'] != sid]
             self.pending_add_cash = [c for c in self.pending_add_cash if c['sid'] != sid]
 
@@ -107,6 +108,7 @@ class GameRoom:
         self.highest_bet = 0.0
         self.street = 'PREFLOP'
         self.community_cards = []
+        self.last_event_notice = None
 
         for p in self.players.values():
             p.current_bet = 0.0
@@ -115,22 +117,18 @@ class GameRoom:
             p.acted_this_street = False
             p.hole_cards = []
 
-        # Advance dealer position
         self.dealer_idx = (self.dealer_idx + 1) % len(self.player_order)
         self.dealer_sid = self.player_order[self.dealer_idx]
 
-        # Build & Shuffle Deck
         ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
         suits = ['S', 'H', 'D', 'C']
         self.deck = [CardModel(r, s) for r in ranks for s in suits]
         random.shuffle(self.deck)
 
-        # Deal cards
         for p_sid in self.player_order:
             if p_sid in self.players and not self.players[p_sid].folded:
                 self.players[p_sid].hole_cards = [self.deck.pop(), self.deck.pop()]
 
-        # Blinds assignment
         n = len(self.player_order)
         sb_idx = (self.dealer_idx + 1) % n
         bb_idx = (self.dealer_idx + 2) % n if n > 2 else sb_idx
@@ -152,13 +150,14 @@ class GameRoom:
         self.pot = sb_amt + bb_amt
         self.highest_bet = bb_amt
 
-        # Action starts after Big Blind
         self.current_turn_idx = (bb_idx + 1) % n
         self.ensure_active_turn()
         return True, "Hand started successfully."
 
     def ensure_active_turn(self):
         n = len(self.player_order)
+        if n == 0:
+            return
         attempts = 0
         while attempts < n:
             current_sid = self.player_order[self.current_turn_idx]
@@ -171,7 +170,6 @@ class GameRoom:
     def discontinue_hand(self, reason="Hand discontinued by Host."):
         if not self.in_progress:
             return
-        # Refund current street bets to players
         for p in self.players.values():
             p.chips += p.current_bet
             p.current_bet = 0.0
@@ -185,20 +183,21 @@ class GameRoom:
 
     def process_action(self, sid, action, amount=0.0):
         if not self.in_progress:
-            return False, "No active hand."
+            return False, "No active hand.", None
 
         current_sid = self.player_order[self.current_turn_idx]
         if sid != current_sid:
-            return False, "Not your turn."
+            return False, "Not your turn.", None
 
         player = self.players[sid]
         player.acted_this_street = True
+        event_notice = None
 
         if action == 'fold':
             player.folded = True
         elif action == 'check':
             if player.current_bet < self.highest_bet:
-                return False, f"Cannot check. Current call amount is ${self.highest_bet - player.current_bet:.2f}"
+                return False, f"Cannot check. Call amount is ${self.highest_bet - player.current_bet:.2f}", None
         elif action == 'call':
             call_amt = self.highest_bet - player.current_bet
             actual_call = min(call_amt, player.chips)
@@ -208,90 +207,99 @@ class GameRoom:
             self.pot += actual_call
         elif action == 'raise':
             if amount <= self.highest_bet:
-                return False, f"Raise target must exceed current bet of ${self.highest_bet:.2f}"
+                return False, f"Raise target must exceed current bet of ${self.highest_bet:.2f}", None
             needed = amount - player.current_bet
             if needed > player.chips:
-                return False, "Insufficient chips for raise."
+                return False, "Insufficient chips for raise.", None
             player.chips -= needed
             player.current_bet += needed
             player.total_invested += needed
             self.pot += needed
             self.highest_bet = amount
-            # Reset acted flag for everyone else when a raise occurs
             for p_sid, p in self.players.items():
                 if p_sid != sid and not p.folded:
                     p.acted_this_street = False
 
-        # Check fold count
         active_unfolded = [p for p in self.players.values() if not p.folded]
         if len(active_unfolded) == 1:
             winner = active_unfolded[0]
             winner.chips += self.pot
-            self.last_hand_summary = f"{winner.name} won ${self.pot:.2f} (All other players folded)."
+            summary = f"Winner: {winner.name}\nAmount Won: ${self.pot:.2f}\nReason: All other players folded."
+            self.last_hand_summary = summary
             self.in_progress = False
-            return True, "Hand ended by fold."
+            return True, "Hand ended by fold.", {'type': 'hand_ended', 'summary': summary}
 
-        self.advance_turn()
-        return True, "Action processed."
+        event_notice = self.advance_turn()
+        return True, "Action processed.", event_notice
 
     def advance_turn(self):
-        # Check if betting round for current street is complete
         active_players = [p for p in self.players.values() if not p.folded and p.chips > 0]
         bets_equal = len(set(p.current_bet for p in active_players)) <= 1
         all_acted = all(p.acted_this_street for p in active_players)
 
         if bets_equal and all_acted:
-            self.next_street()
+            return self.next_street()
         else:
             n = len(self.player_order)
             self.current_turn_idx = (self.current_turn_idx + 1) % n
             self.ensure_active_turn()
+            return None
 
     def next_street(self):
-        # Reset current bets for new street
         for p in self.players.values():
             p.current_bet = 0.0
             p.acted_this_street = False
         self.highest_bet = 0.0
 
+        event_notice = None
+
         if self.street == 'PREFLOP':
             self.street = 'FLOP'
-            self.community_cards = [self.deck.pop(), self.deck.pop(), self.deck.pop()]
+            new_cards = [self.deck.pop(), self.deck.pop(), self.deck.pop()]
+            self.community_cards.extend(new_cards)
+            card_str = ", ".join([f"{c.rank}{c.suit}" for c in new_cards])
+            event_notice = {'type': 'community_cards', 'title': 'Flop Revealed!', 'cards': card_str}
         elif self.street == 'FLOP':
             self.street = 'TURN'
-            self.community_cards.append(self.deck.pop())
+            new_card = self.deck.pop()
+            self.community_cards.append(new_card)
+            card_str = f"{new_card.rank}{new_card.suit}"
+            event_notice = {'type': 'community_cards', 'title': 'Turn Revealed!', 'cards': card_str}
         elif self.street == 'TURN':
             self.street = 'RIVER'
-            self.community_cards.append(self.deck.pop())
+            new_card = self.deck.pop()
+            self.community_cards.append(new_card)
+            card_str = f"{new_card.rank}{new_card.suit}"
+            event_notice = {'type': 'community_cards', 'title': 'River Revealed!', 'cards': card_str}
         elif self.street == 'RIVER':
             self.street = 'SHOWDOWN'
-            self.evaluate_showdown()
-            return
+            summary = self.evaluate_showdown()
+            return {'type': 'hand_ended', 'summary': summary}
 
-        # Start action with first active player left of dealer
         self.current_turn_idx = (self.dealer_idx + 1) % len(self.player_order)
         self.ensure_active_turn()
+        return event_notice
 
     def evaluate_showdown(self):
         self.in_progress = False
         active_players = [p for p in self.players.values() if not p.folded]
         
         if not active_players:
-            self.last_hand_summary = "Hand ended with no active players."
-            return
+            summary = "Hand ended with no active players."
+            self.last_hand_summary = summary
+            return summary
 
         board_treys = [Card.new(c.to_treys_str()) for c in self.community_cards]
         best_score = 99999
         winners = []
-
-        summary_lines = ["Showdown Results:"]
+        summary_lines = []
 
         for p in active_players:
             hand_treys = [Card.new(c.to_treys_str()) for c in p.hole_cards]
             score = evaluator.evaluate(board_treys, hand_treys)
             rank_class = evaluator.get_rank_class(score)
             class_str = evaluator.class_to_string(rank_class)
-            summary_lines.append(f"- {p.name}: {class_str}")
+            summary_lines.append(f"• {p.name}: {class_str}")
 
             if score < best_score:
                 best_score = score
@@ -304,5 +312,6 @@ class GameRoom:
         for w in winners:
             w.chips += split_pot
 
-        summary_lines.append(f"Winner(s): {winner_names} winning ${self.pot:.2f} total.")
-        self.last_hand_summary = "\n".join(summary_lines)
+        final_summary = f"🏆 WINNER: {winner_names}\n💰 POT WON: ${self.pot:.2f}\n\nEVALUATION:\n" + "\n".join(summary_lines)
+        self.last_hand_summary = final_summary
+        return final_summary
