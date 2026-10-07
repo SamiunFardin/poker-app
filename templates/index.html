@@ -37,6 +37,7 @@
         button:hover { background: #2ecc71; }
         button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
         button.btn-danger { background: #c0392b; }
+        button.btn-warning { background: #d35400; }
 
         .poker-table-container {
             position: relative; width: 100%; height: 500px; margin: 20px 0;
@@ -52,9 +53,9 @@
         }
 
         .pot-badge {
-            font-size: 22px; font-weight: bold; color: var(--accent-gold);
+            font-size: 20px; font-weight: bold; color: var(--accent-gold);
             background: rgba(0,0,0,0.75); padding: 8px 20px; border-radius: 20px;
-            border: 1px solid var(--accent-gold); margin-bottom: 15px;
+            border: 1px solid var(--accent-gold); margin-bottom: 10px; text-align: center;
         }
 
         .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
@@ -73,22 +74,22 @@
         }
 
         .seat {
-            position: absolute; width: 130px; background: rgba(25, 25, 25, 0.95);
-            border: 2px solid #444; border-radius: 10px; padding: 10px;
-            text-align: center; font-size: 13px;
+            position: absolute; width: 140px; background: rgba(25, 25, 25, 0.95);
+            border: 2px solid #444; border-radius: 10px; padding: 8px;
+            text-align: center; font-size: 12px;
         }
         .seat.active-turn { border-color: var(--accent-gold); box-shadow: 0 0 18px var(--accent-gold); }
 
         .seat-0 { bottom: -20px; left: 50%; transform: translateX(-50%); }
-        .seat-1 { bottom: 30px; left: 3%; }
-        .seat-2 { top: 30px; left: 3%; }
+        .seat-1 { bottom: 30px; left: 2%; }
+        .seat-2 { top: 30px; left: 2%; }
         .seat-3 { top: -20px; left: 50%; transform: translateX(-50%); }
-        .seat-4 { top: 30px; right: 3%; }
-        .seat-5 { bottom: 30px; right: 3%; }
+        .seat-4 { top: 30px; right: 2%; }
+        .seat-5 { bottom: 30px; right: 2%; }
 
         .request-card {
-            background: #252525; padding: 10px 15px; border-radius: 8px;
-            margin: 8px 0; border-left: 4px solid var(--accent-gold);
+            background: #252525; padding: 8px 12px; border-radius: 8px;
+            margin: 6px 0; border-left: 4px solid var(--accent-gold);
             display: flex; justify-content: space-between; align-items: center;
         }
 
@@ -128,26 +129,36 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>Room Code: <span id="display-room-id" style="color: var(--accent-gold);"></span> <span id="host-indicator" class="hidden" style="color: #2ecc71; font-size: 14px;">(Host Admin Mode)</span></h2>
             <div>
-                <button id="btn-add-cash-req" class="hidden">Request Add Cash</button>
+                <button id="btn-add-cash-req" class="hidden">Request Cash</button>
                 <button id="btn-view-last-hand">View Last Hand</button>
+                <button id="btn-exit-game" class="btn-danger">Exit Game</button>
             </div>
         </div>
 
         <!-- HOST CONTROL PANEL -->
         <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #161616;">
             <h3 style="color: var(--accent-gold); margin-top: 0;">Host Control Panel</h3>
-            <button id="btn-start-hand" style="font-size: 16px; padding: 10px 24px;">Start Next Hand</button>
+            <button id="btn-start-hand" style="font-size: 15px;">Start Next Hand</button>
+            <button id="btn-discontinue-hand" class="btn-warning" style="font-size: 15px;">Discontinue Current Hand</button>
             
             <div style="margin-top: 15px;">
                 <h4 style="margin: 5px 0; color: #fff;">Pending Approvals (<span id="request-count">0</span>):</h4>
                 <div id="pending-requests-list"></div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <h4 style="margin: 5px 0; color: #fff;">Left Players History:</h4>
+                <div id="left-players-list" style="max-height: 100px; overflow-y: auto; font-size: 13px; color: #bbb;"></div>
             </div>
         </div>
 
         <!-- POKER TABLE -->
         <div class="poker-table-container">
             <div class="poker-table">
-                <div class="pot-badge">Total Pot: $<span id="pot-amount">0</span></div>
+                <div class="pot-badge">
+                    <div>Total Pot: $<span id="pot-amount">0</span></div>
+                    <div style="font-size: 13px; color: #aaa; margin-top:2px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | Highest Bet: $<span id="high-bet-amount">0</span></div>
+                </div>
                 <div class="community-cards" id="community-cards"></div>
             </div>
             <div id="seats-container"></div>
@@ -156,11 +167,11 @@
         <!-- PLAYER ACTION CONTROLS -->
         <div id="player-action-panel" class="card-panel" style="background: #2a2a2a; text-align: center;">
             <button id="btn-check">Check</button>
-            <button id="btn-call">Call</button>
+            <button id="btn-call">Call $<span id="call-amount-label">0</span></button>
             <button id="btn-fold" class="btn-danger">Fold</button>
             <span style="margin: 0 10px;">|</span>
-            <input type="number" id="raise-amount" style="width: 100px;" value="20">
-            <button id="btn-raise">Raise / Bet</button>
+            <input type="number" id="raise-amount" style="width: 100px;" value="40">
+            <button id="btn-raise">Raise / Bet Target</button>
         </div>
     </div>
 </div>
@@ -177,9 +188,45 @@
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     const socket = io();
-    let currentRoom = '';
+    let currentRoom = sessionStorage.getItem('poker_room_id') || '';
+    let sessionId = sessionStorage.getItem('poker_session_id') || createUUID();
+    sessionStorage.setItem('poker_session_id', sessionId);
     let isHost = false;
     let lastHandSummaryText = "No hands played yet.";
+
+    function createUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    // Auto-reconnect session on refresh
+    socket.on('connect', () => {
+        if (currentRoom) {
+            socket.emit('reconnect_session', { room_id: currentRoom, session_id: sessionId });
+        }
+    });
+
+    socket.on('session_restored', (data) => {
+        if (data.success) {
+            currentRoom = data.room_id;
+            isHost = data.is_host;
+            document.getElementById('lobby-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = currentRoom;
+
+            if (isHost) {
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('host-indicator').classList.remove('hidden');
+                document.getElementById('player-action-panel').classList.add('hidden');
+            } else {
+                document.getElementById('btn-add-cash-req').classList.remove('hidden');
+            }
+        } else {
+            sessionStorage.removeItem('poker_room_id');
+        }
+    });
 
     function renderCardGraphic(card) {
         if (!card) return `<div class="card-graphic card-back"></div>`;
@@ -201,7 +248,8 @@
         const hostName = document.getElementById('host-name').value.trim();
         if (!roomId) return alert('Enter room code');
         currentRoom = roomId;
-        socket.emit('create_room', { room_id: roomId, host_name: hostName });
+        sessionStorage.setItem('poker_room_id', currentRoom);
+        socket.emit('create_room', { room_id: roomId, host_name: hostName, session_id: sessionId });
     });
 
     document.getElementById('btn-join-room').addEventListener('click', () => {
@@ -210,11 +258,26 @@
         const buyIn = parseFloat(document.getElementById('join-buyin').value) || 1000;
         if (!roomId || !playerName) return alert('Enter Room Code and Player Name');
         currentRoom = roomId;
-        socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn });
+        sessionStorage.setItem('poker_room_id', currentRoom);
+        socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn, session_id: sessionId });
     });
 
     document.getElementById('btn-start-hand').addEventListener('click', () => {
         socket.emit('start_hand', { room_id: currentRoom });
+    });
+
+    document.getElementById('btn-discontinue-hand').addEventListener('click', () => {
+        if (confirm("Are you sure you want to discontinue this hand? Current bets will be refunded.")) {
+            socket.emit('discontinue_hand', { room_id: currentRoom });
+        }
+    });
+
+    document.getElementById('btn-exit-game').addEventListener('click', () => {
+        if (confirm("Leave table and exit game?")) {
+            socket.emit('leave_game', { room_id: currentRoom });
+            sessionStorage.removeItem('poker_room_id');
+            location.reload();
+        }
     });
 
     document.getElementById('btn-add-cash-req').addEventListener('click', () => {
@@ -250,7 +313,6 @@
         document.getElementById('popup-modal').classList.add('hidden');
     });
 
-    // SOCKET EVENT LISTENERS
     socket.on('room_created', (data) => {
         isHost = true;
         document.getElementById('lobby-section').classList.add('hidden');
@@ -270,13 +332,21 @@
         document.getElementById('display-room-id').innerText = data.room_id;
     });
 
+    socket.on('kicked', (data) => {
+        alert(data.message);
+        sessionStorage.removeItem('poker_room_id');
+        location.reload();
+    });
+
     socket.on('notification', (data) => showModal(data.title, data.message));
 
     socket.on('game_state', (state) => {
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
-        document.getElementById('pot-amount').innerText = state.pot;
+        document.getElementById('pot-amount').innerText = state.pot.toFixed(2);
+        document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(2);
+        document.getElementById('street-name').innerText = state.street;
 
-        // Render Pending Requests explicitly for Host Admin
+        // Render Pending Requests & Left Players History for Host
         if (state.is_host) {
             const listContainer = document.getElementById('pending-requests-list');
             listContainer.innerHTML = '';
@@ -292,14 +362,9 @@
                 joins.forEach(p => {
                     const card = document.createElement('div');
                     card.className = 'request-card';
-                    card.innerHTML = `
-                        <div>
-                            <strong>Player Join Request:</strong> ${p.name}<br>
-                            <small style="color:#aaa;">Starting Buy-In: $${p.buy_in}</small>
-                        </div>
-                    `;
+                    card.innerHTML = `<div><strong>Join:</strong> ${p.name} ($${p.buy_in})</div>`;
                     const btn = document.createElement('button');
-                    btn.innerText = 'Approve Join';
+                    btn.innerText = 'Approve';
                     btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
                     card.appendChild(btn);
                     listContainer.appendChild(card);
@@ -308,48 +373,66 @@
                 cashes.forEach(c => {
                     const card = document.createElement('div');
                     card.className = 'request-card';
-                    card.innerHTML = `
-                        <div>
-                            <strong>Chip Request:</strong> ${c.name}<br>
-                            <small style="color:#aaa;">Amount: +$${c.amount}</small>
-                        </div>
-                    `;
+                    card.innerHTML = `<div><strong>Cash:</strong> ${c.name} (+$${c.amount})</div>`;
                     const btn = document.createElement('button');
-                    btn.innerText = 'Approve Cash';
+                    btn.innerText = 'Approve';
                     btn.onclick = () => socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount });
                     card.appendChild(btn);
                     listContainer.appendChild(card);
                 });
             }
+
+            const historyList = document.getElementById('left-players-list');
+            historyList.innerHTML = '';
+            (state.left_players_history || []).forEach(item => {
+                historyList.innerHTML += `<div>• <strong>${item.name}</strong> - Final Chips: $${item.final_chips} (${item.reason})</div>`;
+            });
         }
 
         // Render Community Cards
         const ccContainer = document.getElementById('community-cards');
-        ccContainer.innerHTML = (state.community_cards && state.community_cards.length > 0)
-            ? state.community_cards.map(c => renderCardGraphic(c)).join('')
-            : renderCardGraphic(null) + renderCardGraphic(null) + renderCardGraphic(null);
+        ccContainer.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const card = (state.community_cards && state.community_cards[i]) ? state.community_cards[i] : null;
+            ccContainer.innerHTML += renderCardGraphic(card);
+        }
 
         // Render Table Seats
         const seatsContainer = document.getElementById('seats-container');
         seatsContainer.innerHTML = '';
 
+        let myCurrentBet = 0;
+
         state.players.forEach((p, idx) => {
+            if (p.sid === socket.id) {
+                myCurrentBet = p.current_bet;
+            }
+
             const isTurn = (p.sid === state.current_turn_sid);
             const cardsHtml = (p.hole_cards && p.hole_cards.length > 0)
                 ? p.hole_cards.map(c => renderCardGraphic(c)).join('')
                 : (state.in_progress ? renderCardGraphic(null) + renderCardGraphic(null) : '');
 
+            let kickBtnHtml = (state.is_host && p.sid !== socket.id) 
+                ? `<button class="btn-danger" style="padding:2px 6px; font-size:10px; margin-top:4px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
+                : '';
+
             seatsContainer.innerHTML += `
                 <div class="seat seat-${idx % 6} ${isTurn ? 'active-turn' : ''}">
-                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:2px 5px; border-radius:50%; font-size:10px;">D</span>' : ''}</div>
-                    <div>Chips: $${p.chips}</div>
-                    <div>Bet: $${p.current_bet} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
-                    <div style="display:flex; justify-content:center; gap:4px; margin-top:5px;">${cardsHtml}</div>
+                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:1px 4px; border-radius:50%; font-size:10px;">D</span>' : ''}</div>
+                    <div>Chips: $${p.chips.toFixed(2)}</div>
+                    <div>Bet: $${p.current_bet.toFixed(2)} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
+                    <div style="display:flex; justify-content:center; gap:3px; margin-top:4px;">${cardsHtml}</div>
+                    ${kickBtnHtml}
                 </div>
             `;
         });
 
-        // Toggle action panel based on active turn
+        // Dynamic Call Amount Calculation
+        const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
+        document.getElementById('call-amount-label').innerText = callNeeded.toFixed(2);
+
+        // Toggle action buttons
         if (!isHost) {
             const myTurn = (socket.id === state.current_turn_sid);
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
@@ -357,6 +440,12 @@
             });
         }
     });
+
+    function kickPlayer(targetSid) {
+        if (confirm("Kick player from game?")) {
+            socket.emit('kick_player', { room_id: currentRoom, target_sid: targetSid });
+        }
+    }
 
     socket.on('error', (err) => showModal('Error', err.message));
 </script>
