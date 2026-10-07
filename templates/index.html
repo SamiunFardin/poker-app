@@ -9,8 +9,8 @@
             --felt-color: #12542a;
             --table-rim: #2d1810;
             --accent-gold: #f1c40f;
-            --card-w: 52px;
-            --card-h: 74px;
+            --card-w: 48px;
+            --card-h: 68px;
         }
 
         body {
@@ -18,18 +18,18 @@
             background-color: #121212;
             color: #ffffff;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .container { width: 100%; max-width: 1100px; }
-        .card-panel { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .container { width: 100%; max-width: 1000px; }
+        .card-panel { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .hidden { display: none !important; }
 
         input, button {
-            padding: 10px 14px; margin: 5px; border-radius: 6px;
+            padding: 10px 14px; margin: 4px; border-radius: 6px;
             border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px;
         }
 
@@ -40,31 +40,31 @@
         button.btn-warning { background: #d35400; }
 
         .poker-table-container {
-            position: relative; width: 100%; height: 500px; margin: 20px 0;
+            position: relative; width: 100%; height: 520px; margin: 10px 0;
             display: flex; justify-content: center; align-items: center;
         }
 
         .poker-table {
-            position: relative; width: 85%; height: 380px;
+            position: relative; width: 80%; height: 320px;
             background: radial-gradient(circle, #196f3d 0%, var(--felt-color) 85%);
-            border: 18px solid var(--table-rim); border-radius: 200px;
+            border: 14px solid var(--table-rim); border-radius: 180px;
             box-shadow: inset 0 0 25px #000, 0 10px 30px rgba(0,0,0,0.8);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         .pot-badge {
-            font-size: 20px; font-weight: bold; color: var(--accent-gold);
-            background: rgba(0,0,0,0.75); padding: 8px 20px; border-radius: 20px;
-            border: 1px solid var(--accent-gold); margin-bottom: 10px; text-align: center;
+            font-size: 18px; font-weight: bold; color: var(--accent-gold);
+            background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 16px;
+            border: 1px solid var(--accent-gold); margin-bottom: 8px; text-align: center;
         }
 
-        .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
+        .community-cards { display: flex; gap: 6px; min-height: var(--card-h); }
 
         .card-graphic {
             width: var(--card-w); height: var(--card-h); background: #ffffff;
-            border-radius: 6px; display: inline-flex; flex-direction: column;
-            justify-content: space-between; padding: 4px; box-sizing: border-box;
-            color: #000; font-weight: bold; font-size: 14px; user-select: none;
+            border-radius: 5px; display: inline-flex; flex-direction: column;
+            justify-content: space-between; padding: 3px; box-sizing: border-box;
+            color: #000; font-weight: bold; font-size: 13px; user-select: none;
         }
         .card-graphic.red { color: #e74c3c; }
         .card-graphic.black { color: #2c3e50; }
@@ -74,18 +74,20 @@
         }
 
         .seat {
-            position: absolute; width: 140px; background: rgba(25, 25, 25, 0.95);
-            border: 2px solid #444; border-radius: 10px; padding: 8px;
-            text-align: center; font-size: 12px;
+            position: absolute; width: 130px; background: rgba(25, 25, 25, 0.95);
+            border: 2px solid #444; border-radius: 8px; padding: 6px;
+            text-align: center; font-size: 12px; z-index: 5;
         }
-        .seat.active-turn { border-color: var(--accent-gold); box-shadow: 0 0 18px var(--accent-gold); }
+        .seat.is-me { border-color: var(--accent-gold); background: rgba(35, 35, 10, 0.95); z-index: 10; }
+        .seat.active-turn { box-shadow: 0 0 18px var(--accent-gold); }
 
-        .seat-0 { bottom: -20px; left: 50%; transform: translateX(-50%); }
-        .seat-1 { bottom: 30px; left: 2%; }
-        .seat-2 { top: 30px; left: 2%; }
-        .seat-3 { top: -20px; left: 50%; transform: translateX(-50%); }
-        .seat-4 { top: 30px; right: 2%; }
-        .seat-5 { bottom: 30px; right: 2%; }
+        /* Positional Seats around table */
+        .seat-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
+        .seat-1 { bottom: 60px; left: 1%; }
+        .seat-2 { top: 60px; left: 1%; }
+        .seat-3 { top: 0px; left: 50%; transform: translateX(-50%); }
+        .seat-4 { top: 60px; right: 1%; }
+        .seat-5 { bottom: 60px; right: 1%; }
 
         .request-card {
             background: #252525; padding: 8px 12px; border-radius: 8px;
@@ -98,7 +100,7 @@
             background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-box {
-            background: #222; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; text-align: center; border: 2px solid var(--accent-gold);
+            background: #222; padding: 25px; border-radius: 12px; max-width: 450px; width: 90%; text-align: center; border: 2px solid var(--accent-gold);
         }
     </style>
 </head>
@@ -127,7 +129,7 @@
     <!-- GAME SECTION -->
     <div id="game-section" class="card-panel hidden">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Room Code: <span id="display-room-id" style="color: var(--accent-gold);"></span> <span id="host-indicator" class="hidden" style="color: #2ecc71; font-size: 14px;">(Host Admin Mode)</span></h2>
+            <h2>Room Code: <span id="display-room-id" style="color: var(--accent-gold);"></span> <span id="host-indicator" class="hidden" style="color: #2ecc71; font-size: 14px;">(Host Admin)</span></h2>
             <div>
                 <button id="btn-add-cash-req" class="hidden">Request Cash</button>
                 <button id="btn-view-last-hand">View Last Hand</button>
@@ -141,14 +143,14 @@
             <button id="btn-start-hand" style="font-size: 15px;">Start Next Hand</button>
             <button id="btn-discontinue-hand" class="btn-warning" style="font-size: 15px;">Discontinue Current Hand</button>
             
-            <div style="margin-top: 15px;">
+            <div style="margin-top: 12px;">
                 <h4 style="margin: 5px 0; color: #fff;">Pending Approvals (<span id="request-count">0</span>):</h4>
                 <div id="pending-requests-list"></div>
             </div>
 
-            <div style="margin-top: 15px;">
+            <div style="margin-top: 12px;">
                 <h4 style="margin: 5px 0; color: #fff;">Left Players History:</h4>
-                <div id="left-players-list" style="max-height: 100px; overflow-y: auto; font-size: 13px; color: #bbb;"></div>
+                <div id="left-players-list" style="max-height: 90px; overflow-y: auto; font-size: 12px; color: #bbb;"></div>
             </div>
         </div>
 
@@ -157,7 +159,7 @@
             <div class="poker-table">
                 <div class="pot-badge">
                     <div>Total Pot: $<span id="pot-amount">0</span></div>
-                    <div style="font-size: 13px; color: #aaa; margin-top:2px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | Highest Bet: $<span id="high-bet-amount">0</span></div>
+                    <div style="font-size: 12px; color: #aaa; margin-top:2px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | Highest Bet: $<span id="high-bet-amount">0</span></div>
                 </div>
                 <div class="community-cards" id="community-cards"></div>
             </div>
@@ -169,8 +171,8 @@
             <button id="btn-check">Check</button>
             <button id="btn-call">Call $<span id="call-amount-label">0</span></button>
             <button id="btn-fold" class="btn-danger">Fold</button>
-            <span style="margin: 0 10px;">|</span>
-            <input type="number" id="raise-amount" style="width: 100px;" value="40">
+            <span style="margin: 0 8px;">|</span>
+            <input type="number" id="raise-amount" style="width: 90px;" value="40">
             <button id="btn-raise">Raise / Bet Target</button>
         </div>
     </div>
@@ -180,7 +182,7 @@
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
-        <p id="modal-body" style="font-size: 16px; line-height: 1.5; white-space: pre-line;"></p>
+        <p id="modal-body" style="font-size: 15px; line-height: 1.5; white-space: pre-line; margin: 15px 0;"></p>
         <button id="btn-close-modal">Dismiss</button>
     </div>
 </div>
@@ -188,9 +190,9 @@
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     const socket = io();
-    let currentRoom = sessionStorage.getItem('poker_room_id') || '';
-    let sessionId = sessionStorage.getItem('poker_session_id') || createUUID();
-    sessionStorage.setItem('poker_session_id', sessionId);
+    let currentRoom = localStorage.getItem('poker_room_id') || '';
+    let sessionId = localStorage.getItem('poker_session_id') || createUUID();
+    localStorage.setItem('poker_session_id', sessionId);
     let isHost = false;
     let lastHandSummaryText = "No hands played yet.";
 
@@ -201,7 +203,7 @@
         });
     }
 
-    // Auto-reconnect session on refresh
+    // Auto reconnect on refresh
     socket.on('connect', () => {
         if (currentRoom) {
             socket.emit('reconnect_session', { room_id: currentRoom, session_id: sessionId });
@@ -224,7 +226,7 @@
                 document.getElementById('btn-add-cash-req').classList.remove('hidden');
             }
         } else {
-            sessionStorage.removeItem('poker_room_id');
+            localStorage.removeItem('poker_room_id');
         }
     });
 
@@ -237,7 +239,7 @@
         return `
             <div class="card-graphic ${isRed ? 'red' : 'black'}">
                 <div>${card.rank}</div>
-                <div style="text-align:center; font-size: 18px;">${symbol}</div>
+                <div style="text-align:center; font-size: 16px;">${symbol}</div>
                 <div style="text-align:right;">${card.rank}</div>
             </div>
         `;
@@ -248,7 +250,7 @@
         const hostName = document.getElementById('host-name').value.trim();
         if (!roomId) return alert('Enter room code');
         currentRoom = roomId;
-        sessionStorage.setItem('poker_room_id', currentRoom);
+        localStorage.setItem('poker_room_id', currentRoom);
         socket.emit('create_room', { room_id: roomId, host_name: hostName, session_id: sessionId });
     });
 
@@ -258,7 +260,7 @@
         const buyIn = parseFloat(document.getElementById('join-buyin').value) || 1000;
         if (!roomId || !playerName) return alert('Enter Room Code and Player Name');
         currentRoom = roomId;
-        sessionStorage.setItem('poker_room_id', currentRoom);
+        localStorage.setItem('poker_room_id', currentRoom);
         socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn, session_id: sessionId });
     });
 
@@ -267,21 +269,21 @@
     });
 
     document.getElementById('btn-discontinue-hand').addEventListener('click', () => {
-        if (confirm("Are you sure you want to discontinue this hand? Current bets will be refunded.")) {
+        if (confirm("Discontinue current hand?")) {
             socket.emit('discontinue_hand', { room_id: currentRoom });
         }
     });
 
     document.getElementById('btn-exit-game').addEventListener('click', () => {
-        if (confirm("Leave table and exit game?")) {
+        if (confirm("Exit game table?")) {
             socket.emit('leave_game', { room_id: currentRoom });
-            sessionStorage.removeItem('poker_room_id');
+            localStorage.removeItem('poker_room_id');
             location.reload();
         }
     });
 
     document.getElementById('btn-add-cash-req').addEventListener('click', () => {
-        const amt = prompt("Enter cash amount to request:", "500");
+        const amt = prompt("Enter cash amount:", "500");
         if (amt && !isNaN(amt)) {
             socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
         }
@@ -334,7 +336,7 @@
 
     socket.on('kicked', (data) => {
         alert(data.message);
-        sessionStorage.removeItem('poker_room_id');
+        localStorage.removeItem('poker_room_id');
         location.reload();
     });
 
@@ -346,7 +348,6 @@
         document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(2);
         document.getElementById('street-name').innerText = state.street;
 
-        // Render Pending Requests & Left Players History for Host
         if (state.is_host) {
             const listContainer = document.getElementById('pending-requests-list');
             listContainer.innerHTML = '';
@@ -357,7 +358,7 @@
             document.getElementById('request-count').innerText = joins.length + cashes.length;
 
             if (joins.length === 0 && cashes.length === 0) {
-                listContainer.innerHTML = '<p style="color:#aaa; font-size:13px;">No pending requests right now.</p>';
+                listContainer.innerHTML = '<p style="color:#aaa; font-size:12px;">No pending requests.</p>';
             } else {
                 joins.forEach(p => {
                     const card = document.createElement('div');
@@ -404,35 +405,37 @@
         let myCurrentBet = 0;
 
         state.players.forEach((p, idx) => {
-            if (p.sid === socket.id) {
-                myCurrentBet = p.current_bet;
-            }
+            const isMe = (p.sid === socket.id);
+            if (isMe) myCurrentBet = p.current_bet;
 
             const isTurn = (p.sid === state.current_turn_sid);
-            const cardsHtml = (p.hole_cards && p.hole_cards.length > 0)
-                ? p.hole_cards.map(c => renderCardGraphic(c)).join('')
-                : (state.in_progress ? renderCardGraphic(null) + renderCardGraphic(null) : '');
+            
+            // Only render actual hole cards for myself or at Showdown. Hide cards for other players during live play.
+            let cardsHtml = '';
+            if (isMe && p.hole_cards && p.hole_cards.length > 0) {
+                cardsHtml = p.hole_cards.map(c => renderCardGraphic(c)).join('');
+            } else if (state.street === 'SHOWDOWN' && p.hole_cards && p.hole_cards.length > 0) {
+                cardsHtml = p.hole_cards.map(c => renderCardGraphic(c)).join('');
+            }
 
-            let kickBtnHtml = (state.is_host && p.sid !== socket.id) 
-                ? `<button class="btn-danger" style="padding:2px 6px; font-size:10px; margin-top:4px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
+            let kickBtnHtml = (state.is_host && !isMe) 
+                ? `<button class="btn-danger" style="padding:1px 5px; font-size:10px; margin-top:2px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
                 : '';
 
             seatsContainer.innerHTML += `
-                <div class="seat seat-${idx % 6} ${isTurn ? 'active-turn' : ''}">
-                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:1px 4px; border-radius:50%; font-size:10px;">D</span>' : ''}</div>
+                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''}">
+                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:1px 3px; border-radius:50%; font-size:9px;">D</span>' : ''}</div>
                     <div>Chips: $${p.chips.toFixed(2)}</div>
                     <div>Bet: $${p.current_bet.toFixed(2)} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
-                    <div style="display:flex; justify-content:center; gap:3px; margin-top:4px;">${cardsHtml}</div>
+                    ${cardsHtml ? `<div style="display:flex; justify-content:center; gap:2px; margin-top:4px;">${cardsHtml}</div>` : ''}
                     ${kickBtnHtml}
                 </div>
             `;
         });
 
-        // Dynamic Call Amount Calculation
         const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
         document.getElementById('call-amount-label').innerText = callNeeded.toFixed(2);
 
-        // Toggle action buttons
         if (!isHost) {
             const myTurn = (socket.id === state.current_turn_sid);
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
