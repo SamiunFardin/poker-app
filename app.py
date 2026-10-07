@@ -52,9 +52,9 @@ def handle_reconnect(data):
 
     if session_id == room.host_session_id:
         room.host_sid = request.sid
-        emit('session_restored', {'success': True, 'is_host': True, 'room_id': room_id})
+        emit('session_restored', {'success': True, 'is_host': True, 'room_id': room_id, 'session_id': session_id})
     elif room.rebind_socket(None, request.sid, session_id):
-        emit('session_restored', {'success': True, 'is_host': False, 'room_id': room_id})
+        emit('session_restored', {'success': True, 'is_host': False, 'room_id': room_id, 'session_id': session_id})
     else:
         emit('session_restored', {'success': False})
         return
@@ -211,12 +211,18 @@ def handle_player_action(data):
         return
     room = rooms[room_id]
 
-    success, msg = room.process_action(request.sid, action, amount)
+    success, msg, event_notice = room.process_action(request.sid, action, amount)
     if not success:
         emit('error', {'message': msg})
         return
 
     broadcast_room_state(room_id)
+
+    if event_notice:
+        if event_notice['type'] == 'community_cards':
+            socketio.emit('notification', {'title': event_notice['title'], 'message': f"Community Cards Revealed: {event_notice['cards']}"}, to=room_id)
+        elif event_notice['type'] == 'hand_ended':
+            socketio.emit('notification', {'title': 'Hand Completed', 'message': event_notice['summary']}, to=room_id)
 
 def broadcast_room_state(room_id):
     if room_id not in rooms:
