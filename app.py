@@ -1,7 +1,7 @@
 import os
 import uuid
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from poker_engine import GameRoom
 
 app = Flask(__name__)
@@ -19,6 +19,8 @@ def index():
 def handle_create_room(data):
     room_id = data.get('room_id', '').strip().upper()
     host_name = data.get('host_name', 'Host Admin').strip()
+    host_is_playing = bool(data.get('host_is_playing', False))
+    host_buyin = float(data.get('host_buyin', 1000.0))
     sb = float(data.get('sb', 10))
     bb = float(data.get('bb', 20))
     session_id = data.get('session_id') or str(uuid.uuid4())
@@ -31,11 +33,11 @@ def handle_create_room(data):
         emit('error', {'message': f'Room code "{room_id}" already exists.'})
         return
 
-    room = GameRoom(room_id, request.sid, session_id, sb, bb)
+    room = GameRoom(room_id, request.sid, session_id, sb, bb, host_is_playing, host_name, host_buyin)
     rooms[room_id] = room
 
     join_room(room_id)
-    emit('room_created', {'room_id': room_id, 'is_host': True, 'session_id': session_id})
+    emit('room_created', {'room_id': room_id, 'is_host': True, 'session_id': session_id, 'host_is_playing': host_is_playing})
     broadcast_room_state(room_id)
 
 @socketio.on('reconnect_session')
@@ -52,6 +54,8 @@ def handle_reconnect(data):
 
     if session_id == room.host_session_id:
         room.host_sid = request.sid
+        if room.host_is_playing:
+            room.rebind_socket(None, request.sid, session_id)
         emit('session_restored', {'success': True, 'is_host': True, 'room_id': room_id, 'session_id': session_id})
     elif room.rebind_socket(None, request.sid, session_id):
         emit('session_restored', {'success': True, 'is_host': False, 'room_id': room_id, 'session_id': session_id})
@@ -60,6 +64,22 @@ def handle_reconnect(data):
         return
 
     broadcast_room_state(room_id)
+
+@socketio.on('close_room_by_host')
+def handle_close_room(data):
+    room_id = data.get('room_id', '').strip().upper()
+    if room_id not in rooms:
+        return
+    room = rooms[room_id]
+
+    if request.sid == room.host_sid:
+        ledger = room.get_ledger_summary()
+        # Broadcast final ledger popup & force exit to all room members
+        socketio.emit('room_closed', {
+            'message': 'The Host has closed the table and ended the game.',
+            'ledger': ledger
+        }, to=room_id)
+        del rooms[room_id]
 
 @socketio.on('join_room_request')
 def handle_join_request(data):
@@ -113,9 +133,13 @@ def handle_leave_game(data):
     room_id = data.get('room_id', '').strip().upper()
     if room_id in rooms:
         room = rooms[room_id]
-        room.remove_player(request.sid, reason="Player Left Voluntarily")
-        emit('game_left', {'message': 'You have left the game.'})
-        broadcast_room_state(room_id)
+        if request.sid == room.host_sid:
+            # If host leaves voluntarily, trigger room close flow
+            handle_close_room(data)
+        else:
+            room.remove_player(request.sid, reason="Player Left Voluntarily")
+            emit('game_left', {'message': 'You have left the game.'})
+            broadcast_room_state(room_id)
 
 @socketio.on('kick_player')
 def handle_kick_player(data):
@@ -178,7 +202,9 @@ def handle_approve_add_cash(data):
     req = next((c for c in room.pending_add_cash if c['sid'] == target_sid and c['amount'] == amount), None)
     if req:
         if target_sid in room.players:
-            room.players[target_sid].chips += amount
+            p = room.players[target_sid]
+            p.chips += amount
+            p.added_cash += amount
         room.pending_add_cash.remove(req)
         socketio.emit('notification', {'title': 'Chips Added', 'message': f'Host approved ${amount} chips!'}, to=target_sid)
         broadcast_room_state(room_id)
@@ -235,6 +261,8 @@ def broadcast_room_state(room_id):
 
     recipients = set(list(room.players.keys()) + [room.host_sid] + [p['sid'] for p in room.pending_joins])
 
+    ledger_summary = room.get_ledger_summary()
+
     for sid in recipients:
         is_host = (sid == room.host_sid)
         players_data = []
@@ -266,7 +294,7 @@ def broadcast_room_state(room_id):
             'last_hand_summary': room.last_hand_summary,
             'pending_joins': getattr(room, 'pending_joins', []),
             'pending_add_cash': getattr(room, 'pending_add_cash', []),
-            'left_players_history': getattr(room, 'left_players_history', [])
+            'ledger_summary': ledger_summary
         }
         socketio.emit('game_state', state, to=sid)
 
