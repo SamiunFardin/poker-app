@@ -5,7 +5,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from poker_engine import GameRoom
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'poker-secret-key-123'
+app.config['SECRET_KEY'] = 'poker-lounge-secret-key-456'
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
@@ -261,7 +261,6 @@ def broadcast_room_state(room_id):
         active_turn_sid = room.player_order[room.current_turn_idx]
 
     recipients = set(list(room.players.keys()) + [room.host_sid] + [p['sid'] for p in room.pending_joins])
-
     ledger_summary = room.get_ledger_summary()
 
     for sid in recipients:
@@ -280,6 +279,8 @@ def broadcast_room_state(room_id):
                     'current_bet': p.current_bet,
                     'folded': getattr(p, 'folded', False),
                     'is_dealer': (p_sid == getattr(room, 'dealer_sid', None)),
+                    'is_sb': (p_sid == getattr(room, 'sb_sid', None)),
+                    'is_bb': (p_sid == getattr(room, 'bb_sid', None)),
                     'hole_cards': [c.to_dict() for c in p.hole_cards] if show_cards and hasattr(p, 'hole_cards') else []
                 })
 
@@ -293,6 +294,7 @@ def broadcast_room_state(room_id):
             'sb': room.sb,
             'bb': room.bb,
             'community_cards': [c.to_dict() for c in room.community_cards] if hasattr(room, 'community_cards') else [],
+            'winning_cards': getattr(room, 'winning_cards', []),
             'current_turn_sid': active_turn_sid,
             'players': players_data,
             'last_hand_summary': room.last_hand_summary,
