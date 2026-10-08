@@ -17,11 +17,12 @@ class CardModel:
         return f"{r}{s}"
 
 class Player:
-    def __init__(self, sid, session_id, name, chips, avatar="😎"):
+    def __init__(self, sid, session_id, name, chips, avatar="😎", is_host=False):
         self.sid = sid
         self.session_id = session_id
         self.name = name
         self.avatar = avatar
+        self.is_host = is_host
         self.initial_buy_in = float(chips)
         self.added_cash = 0.0
         self.chips = float(chips)
@@ -66,10 +67,10 @@ class GameRoom:
         self.last_hand_summary = "No hands played yet."
 
         if self.host_is_playing:
-            self.add_player(host_sid, host_session_id, host_name, host_buyin, host_avatar)
+            self.add_player(host_sid, host_session_id, host_name, host_buyin, host_avatar, is_host=True)
 
-    def add_player(self, sid, session_id, name, chips, avatar="😎"):
-        player = Player(sid, session_id, name, chips, avatar)
+    def add_player(self, sid, session_id, name, chips, avatar="😎", is_host=False):
+        player = Player(sid, session_id, name, chips, avatar, is_host=is_host)
         self.players[sid] = player
         self.session_map[session_id] = player
         if sid not in self.player_order:
@@ -358,7 +359,6 @@ class GameRoom:
         for w in winners:
             w.chips += split_pot
 
-        # Store winning hole cards to highlight them
         self.winning_cards = []
         for w in winners:
             for c in w.hole_cards:
