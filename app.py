@@ -19,6 +19,7 @@ def index():
 def handle_create_room(data):
     room_id = data.get('room_id', '').strip().upper()
     host_name = data.get('host_name', 'Host Admin').strip()
+    host_avatar = data.get('avatar', '👑')
     host_is_playing = bool(data.get('host_is_playing', False))
     host_buyin = float(data.get('host_buyin', 1000.0))
     sb = float(data.get('sb', 10))
@@ -33,7 +34,7 @@ def handle_create_room(data):
         emit('error', {'message': f'Room code "{room_id}" already exists.'})
         return
 
-    room = GameRoom(room_id, request.sid, session_id, sb, bb, host_is_playing, host_name, host_buyin)
+    room = GameRoom(room_id, request.sid, session_id, sb, bb, host_is_playing, host_name, host_buyin, host_avatar)
     rooms[room_id] = room
 
     join_room(room_id)
@@ -74,7 +75,6 @@ def handle_close_room(data):
 
     if request.sid == room.host_sid:
         ledger = room.get_ledger_summary()
-        # Broadcast final ledger popup & force exit to all room members
         socketio.emit('room_closed', {
             'message': 'The Host has closed the table and ended the game.',
             'ledger': ledger
@@ -85,6 +85,7 @@ def handle_close_room(data):
 def handle_join_request(data):
     room_id = data.get('room_id', '').strip().upper()
     player_name = data.get('player_name', 'Player').strip()
+    avatar = data.get('avatar', '😎')
     buy_in = float(data.get('buy_in', 1000.0))
     session_id = data.get('session_id') or str(uuid.uuid4())
 
@@ -102,6 +103,7 @@ def handle_join_request(data):
             'sid': request.sid,
             'session_id': session_id,
             'name': player_name,
+            'avatar': avatar,
             'buy_in': buy_in
         })
 
@@ -122,7 +124,7 @@ def handle_approve_join(data):
 
     pending = next((p for p in room.pending_joins if p['sid'] == target_sid), None)
     if pending:
-        room.add_player(pending['sid'], pending['session_id'], pending['name'], pending['buy_in'])
+        room.add_player(pending['sid'], pending['session_id'], pending['name'], pending['buy_in'], pending.get('avatar', '😎'))
         room.pending_joins.remove(pending)
         
         socketio.emit('join_approved', {'room_id': room_id}, to=target_sid)
@@ -134,7 +136,6 @@ def handle_leave_game(data):
     if room_id in rooms:
         room = rooms[room_id]
         if request.sid == room.host_sid:
-            # If host leaves voluntarily, trigger room close flow
             handle_close_room(data)
         else:
             room.remove_player(request.sid, reason="Player Left Voluntarily")
@@ -274,6 +275,7 @@ def broadcast_room_state(room_id):
                 players_data.append({
                     'sid': p.sid,
                     'name': p.name,
+                    'avatar': p.avatar,
                     'chips': p.chips,
                     'current_bet': p.current_bet,
                     'folded': getattr(p, 'folded', False),
@@ -288,6 +290,8 @@ def broadcast_room_state(room_id):
             'street': room.street,
             'pot': room.pot,
             'highest_bet': room.highest_bet,
+            'sb': room.sb,
+            'bb': room.bb,
             'community_cards': [c.to_dict() for c in room.community_cards] if hasattr(room, 'community_cards') else [],
             'current_turn_sid': active_turn_sid,
             'players': players_data,
