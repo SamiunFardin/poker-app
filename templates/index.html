@@ -428,7 +428,8 @@
             if (isHost) {
                 document.getElementById('host-controls').classList.remove('hidden');
                 document.getElementById('btn-show-qr').classList.remove('hidden');
-            } else {
+            }
+            if (!isHost || data.host_is_playing) {
                 document.getElementById('btn-add-cash-req').classList.remove('hidden');
             }
         } else {
@@ -664,7 +665,7 @@
             } else {
                 joins.forEach(p => {
                     const card = document.createElement('div');
-                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;';
                     card.innerHTML = `<span><strong>Join:</strong> ${p.avatar || ''} ${p.name} ($${p.buy_in})</span>`;
                     const btn = document.createElement('button');
                     btn.className = 'btn-green';
@@ -676,7 +677,7 @@
 
                 cashes.forEach(c => {
                     const card = document.createElement('div');
-                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;';
                     card.innerHTML = `<span><strong>Cash:</strong> ${c.name} (+$${c.amount})</span>`;
                     const btn = document.createElement('button');
                     btn.className = 'btn-green';
@@ -690,7 +691,6 @@
             document.getElementById('host-ledger-container').innerHTML = renderLedgerTable(state.ledger_summary);
         }
 
-        // Render Community Cards with winning hand highlights
         const ccContainer = document.getElementById('community-cards');
         ccContainer.innerHTML = '';
         const winningList = state.winning_cards || [];
@@ -701,7 +701,6 @@
             ccContainer.innerHTML += renderCardGraphic(card, isWin);
         }
 
-        // Render Seats
         const seatsContainer = document.getElementById('seats-container');
         seatsContainer.innerHTML = '';
 
