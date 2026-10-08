@@ -81,7 +81,6 @@
         .seat.is-me { border-color: var(--accent-gold); background: rgba(35, 35, 10, 0.95); z-index: 10; }
         .seat.active-turn { box-shadow: 0 0 18px var(--accent-gold); }
 
-        /* Positional Seats around table */
         .seat-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
         .seat-1 { bottom: 60px; left: 1%; }
         .seat-2 { top: 60px; left: 1%; }
@@ -95,12 +94,20 @@
             display: flex; justify-content: space-between; align-items: center;
         }
 
+        .ledger-table {
+            width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;
+        }
+        .ledger-table th, .ledger-table td {
+            padding: 8px; border: 1px solid #444;
+        }
+        .ledger-table th { background: #333; color: var(--accent-gold); }
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-box {
-            background: #222; padding: 25px; border-radius: 12px; max-width: 450px; width: 90%; text-align: center; border: 2px solid var(--accent-gold);
+            background: #222; padding: 25px; border-radius: 12px; max-width: 550px; width: 92%; text-align: center; border: 2px solid var(--accent-gold);
         }
     </style>
 </head>
@@ -113,7 +120,13 @@
         <div>
             <h3>Create Table (Host Admin)</h3>
             <input type="text" id="host-room-id" placeholder="Room Code (e.g. ROOM1)">
-            <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
+            <input type="text" id="host-name" placeholder="Admin / Player Name" value="Host Admin">
+            <div style="margin: 10px 0;">
+                <label style="font-size: 14px; cursor: pointer;">
+                    <input type="checkbox" id="host-is-playing" onchange="toggleHostBuyin(this.checked)"> Play in game as a player
+                </label>
+            </div>
+            <input type="number" id="host-buyin" class="hidden" placeholder="Host Starting Chips" value="1000">
             <button id="btn-create-room">Create Table</button>
         </div>
         <hr style="border-color: #333; margin: 15px 0;">
@@ -148,9 +161,10 @@
                 <div id="pending-requests-list"></div>
             </div>
 
-            <div style="margin-top: 12px;">
-                <h4 style="margin: 5px 0; color: #fff;">Left Players History:</h4>
-                <div id="left-players-list" style="max-height: 90px; overflow-y: auto; font-size: 12px; color: #bbb;"></div>
+            <!-- PLAYER ACCOUNT LEDGER (HOST ONLY) -->
+            <div style="margin-top: 15px;">
+                <h4 style="margin: 5px 0; color: var(--accent-gold);">Current Players' Account Details (Ledger)</h4>
+                <div id="host-ledger-container" style="overflow-x: auto;"></div>
             </div>
         </div>
 
@@ -182,7 +196,7 @@
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
-        <p id="modal-body" style="font-size: 15px; line-height: 1.5; white-space: pre-line; margin: 15px 0;"></p>
+        <div id="modal-body" style="font-size: 15px; line-height: 1.5; margin: 15px 0;"></div>
         <button id="btn-close-modal">Dismiss</button>
     </div>
 </div>
@@ -194,6 +208,7 @@
     let sessionId = localStorage.getItem('poker_session_id') || createUUID();
     localStorage.setItem('poker_session_id', sessionId);
     let isHost = false;
+    let hostIsPlaying = false;
     let lastHandSummaryText = "No hands played yet.";
 
     function createUUID() {
@@ -201,6 +216,10 @@
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+
+    function toggleHostBuyin(checked) {
+        document.getElementById('host-buyin').classList.toggle('hidden', !checked);
     }
 
     // Auto reconnect on refresh
@@ -221,7 +240,6 @@
             if (isHost) {
                 document.getElementById('host-controls').classList.remove('hidden');
                 document.getElementById('host-indicator').classList.remove('hidden');
-                document.getElementById('player-action-panel').classList.add('hidden');
             } else {
                 document.getElementById('btn-add-cash-req').classList.remove('hidden');
             }
@@ -248,10 +266,19 @@
     document.getElementById('btn-create-room').addEventListener('click', () => {
         const roomId = document.getElementById('host-room-id').value.trim().toUpperCase();
         const hostName = document.getElementById('host-name').value.trim();
+        const isPlaying = document.getElementById('host-is-playing').checked;
+        const hostBuyin = parseFloat(document.getElementById('host-buyin').value) || 1000;
+
         if (!roomId) return alert('Enter room code');
         currentRoom = roomId;
         localStorage.setItem('poker_room_id', currentRoom);
-        socket.emit('create_room', { room_id: roomId, host_name: hostName, session_id: sessionId });
+        socket.emit('create_room', {
+            room_id: roomId,
+            host_name: hostName,
+            host_is_playing: isPlaying,
+            host_buyin: hostBuyin,
+            session_id: sessionId
+        });
     });
 
     document.getElementById('btn-join-room').addEventListener('click', () => {
@@ -275,10 +302,16 @@
     });
 
     document.getElementById('btn-exit-game').addEventListener('click', () => {
-        if (confirm("Exit game table?")) {
-            socket.emit('leave_game', { room_id: currentRoom });
-            localStorage.removeItem('poker_room_id');
-            location.reload();
+        if (isHost) {
+            if (confirm("Exiting as Host will close the room for everyone. Are you sure you want to exit and close the game?")) {
+                socket.emit('close_room_by_host', { room_id: currentRoom });
+            }
+        } else {
+            if (confirm("Exit game table?")) {
+                socket.emit('leave_game', { room_id: currentRoom });
+                localStorage.removeItem('poker_room_id');
+                location.reload();
+            }
         }
     });
 
@@ -290,7 +323,7 @@
     });
 
     document.getElementById('btn-view-last-hand').addEventListener('click', () => {
-        showModal('Last Hand History', lastHandSummaryText);
+        showModal('Last Hand History', `<pre style="text-align:left; white-space:pre-wrap;">${lastHandSummaryText}</pre>`);
     });
 
     document.getElementById('btn-check').addEventListener('click', () => sendAction('check'));
@@ -305,9 +338,9 @@
         socket.emit('player_action', { room_id: currentRoom, action: action, amount: amount });
     }
 
-    function showModal(title, text) {
+    function showModal(title, htmlContent) {
         document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-body').innerText = text;
+        document.getElementById('modal-body').innerHTML = htmlContent;
         document.getElementById('popup-modal').classList.remove('hidden');
     }
 
@@ -317,15 +350,18 @@
 
     socket.on('room_created', (data) => {
         isHost = true;
+        hostIsPlaying = data.host_is_playing;
         document.getElementById('lobby-section').classList.add('hidden');
         document.getElementById('game-section').classList.remove('hidden');
         document.getElementById('host-controls').classList.remove('hidden');
         document.getElementById('host-indicator').classList.remove('hidden');
-        document.getElementById('player-action-panel').classList.add('hidden');
         document.getElementById('display-room-id').innerText = data.room_id;
+        if (hostIsPlaying) {
+            document.getElementById('btn-add-cash-req').classList.remove('hidden');
+        }
     });
 
-    socket.on('join_pending', (data) => showModal('Request Sent', data.message));
+    socket.on('join_pending', (data) => showModal('Request Sent', `<p>${data.message}</p>`));
 
     socket.on('join_approved', (data) => {
         document.getElementById('lobby-section').classList.add('hidden');
@@ -340,7 +376,52 @@
         location.reload();
     });
 
-    socket.on('notification', (data) => showModal(data.title, data.message));
+    socket.on('notification', (data) => showModal(data.title, `<p>${data.message}</p>`));
+
+    socket.on('room_closed', (data) => {
+        localStorage.removeItem('poker_room_id');
+        let ledgerHtml = renderLedgerTable(data.ledger);
+        showModal('📢 Game Ended & Room Closed', `
+            <p style="color:#e74c3c; font-weight:bold;">${data.message}</p>
+            <p style="font-size:13px; color:#aaa;">Please take a screenshot of the final account ledger below for your records:</p>
+            ${ledgerHtml}
+        `);
+        document.getElementById('btn-close-modal').onclick = () => {
+            location.reload();
+        };
+    });
+
+    function renderLedgerTable(ledger) {
+        if (!ledger || ledger.length === 0) return '<p>No ledger history.</p>';
+        let rows = ledger.map(p => {
+            const netColor = p.net_pl >= 0 ? '#2ecc71' : '#e74c3c';
+            const sign = p.net_pl >= 0 ? '+' : '';
+            return `
+                <tr>
+                    <td><strong>${p.name}</strong> <span style="font-size:10px; color:#aaa;">(${p.status})</span></td>
+                    <td>$${p.initial_buy_in.toFixed(2)}</td>
+                    <td>$${p.added_cash.toFixed(2)}</td>
+                    <td>$${p.chips.toFixed(2)}</td>
+                    <td style="color:${netColor}; font-weight:bold;">${sign}$${p.net_pl.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Initial</th>
+                        <th>Added</th>
+                        <th>Current</th>
+                        <th>Net P/L</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
 
     socket.on('game_state', (state) => {
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
@@ -383,11 +464,8 @@
                 });
             }
 
-            const historyList = document.getElementById('left-players-list');
-            historyList.innerHTML = '';
-            (state.left_players_history || []).forEach(item => {
-                historyList.innerHTML += `<div>• <strong>${item.name}</strong> - Final Chips: $${item.final_chips} (${item.reason})</div>`;
-            });
+            // Render Host Live Account Ledger
+            document.getElementById('host-ledger-container').innerHTML = renderLedgerTable(state.ledger_summary);
         }
 
         // Render Community Cards
@@ -403,14 +481,17 @@
         seatsContainer.innerHTML = '';
 
         let myCurrentBet = 0;
+        let amIPlaying = false;
 
         state.players.forEach((p, idx) => {
             const isMe = (p.sid === socket.id);
-            if (isMe) myCurrentBet = p.current_bet;
+            if (isMe) {
+                myCurrentBet = p.current_bet;
+                amIPlaying = true;
+            }
 
             const isTurn = (p.sid === state.current_turn_sid);
             
-            // Only render actual hole cards for myself or at Showdown. Hide cards for other players during live play.
             let cardsHtml = '';
             if (isMe && p.hole_cards && p.hole_cards.length > 0) {
                 cardsHtml = p.hole_cards.map(c => renderCardGraphic(c)).join('');
@@ -433,10 +514,13 @@
             `;
         });
 
+        // Hide action controls if spectator host
+        document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
+
         const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
         document.getElementById('call-amount-label').innerText = callNeeded.toFixed(2);
 
-        if (!isHost) {
+        if (amIPlaying) {
             const myTurn = (socket.id === state.current_turn_sid);
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
                 el.disabled = !myTurn;
@@ -450,7 +534,7 @@
         }
     }
 
-    socket.on('error', (err) => showModal('Error', err.message));
+    socket.on('error', (err) => showModal('Error', `<p>${err.message}</p>`));
 </script>
 </body>
 </html>
