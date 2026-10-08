@@ -6,18 +6,19 @@
     <title>Texas Hold'em Poker Lounge</title>
     <style>
         :root {
-            --bg-dark: #0f1115;
-            --panel-bg: #181b22;
-            --panel-border: #2a2e39;
-            --felt-gradient: radial-gradient(circle, #1e6b3b 0%, #114223 85%, #0a2916 100%);
+            --bg-dark: #0d0f12;
+            --panel-bg: #161920;
+            --panel-border: #262a36;
+            --felt-gradient: radial-gradient(ellipse at center, #1e6b3b 0%, #114223 75%, #082112 100%);
             --rim-color: #2b180d;
+            --rim-border: #4a2817;
             --accent-gold: #f39c12;
             --accent-gold-bright: #f1c40f;
             --btn-green: #27ae60;
             --btn-red: #e74c3c;
             --btn-blue: #2980b9;
-            --card-w: 48px;
-            --card-h: 68px;
+            --card-w: 46px;
+            --card-h: 64px;
         }
 
         * { box-sizing: border-box; }
@@ -35,25 +36,23 @@
 
         .container { width: 100%; max-width: 1050px; }
 
-        /* Panels & Cards */
         .card-panel {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
             padding: 18px;
             border-radius: 14px;
             margin-bottom: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
         .hidden { display: none !important; }
 
-        /* Inputs & Buttons */
         input[type="text"], input[type="number"], select {
             padding: 10px 14px;
             margin: 6px 0;
             border-radius: 8px;
             border: 1px solid #34495e;
-            background: #0d0f12;
+            background: #090a0d;
             color: #fff;
             font-size: 14px;
             width: 100%;
@@ -74,30 +73,21 @@
         }
         button:hover { filter: brightness(1.15); }
         button:active { transform: scale(0.97); }
-        button:disabled { background: #444 !important; color: #888; cursor: not-allowed; opacity: 0.5; filter: none; }
+        button:disabled { background: #333 !important; color: #777; cursor: not-allowed; opacity: 0.5; filter: none; }
 
         .btn-green { background: var(--btn-green); color: #fff; }
         .btn-red { background: var(--btn-red); color: #fff; }
         .btn-blue { background: var(--btn-blue); color: #fff; }
         .btn-gold { background: var(--accent-gold); color: #000; }
 
-        /* Lobby Grid */
-        .lobby-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
+        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
 
-        .avatar-picker {
-            display: flex;
-            gap: 10px;
-            margin: 8px 0;
-        }
+        .avatar-picker { display: flex; gap: 10px; margin: 8px 0; }
         .avatar-opt {
             font-size: 22px;
             padding: 6px 10px;
-            background: #0d0f12;
+            background: #090a0d;
             border: 2px solid transparent;
             border-radius: 8px;
             cursor: pointer;
@@ -108,7 +98,7 @@
         .poker-table-container {
             position: relative;
             width: 100%;
-            height: 480px;
+            height: 490px;
             margin: 15px 0;
             display: flex;
             justify-content: center;
@@ -117,12 +107,13 @@
 
         .poker-table {
             position: relative;
-            width: 82%;
-            height: 320px;
+            width: 84%;
+            height: 330px;
             background: var(--felt-gradient);
             border: 14px solid var(--rim-color);
-            border-radius: 170px;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 12px 35px rgba(0,0,0,0.9);
+            outline: 3px solid var(--rim-border);
+            border-radius: 180px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.85), 0 14px 40px rgba(0,0,0,0.9);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -133,18 +124,18 @@
             font-size: 16px;
             font-weight: 800;
             color: var(--accent-gold-bright);
-            background: rgba(0,0,0,0.75);
-            padding: 6px 18px;
+            background: rgba(0,0,0,0.85);
+            padding: 6px 20px;
             border-radius: 20px;
             border: 1px solid var(--accent-gold);
             margin-bottom: 12px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
 
         .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
 
-        /* Playing Cards */
+        /* Cards & Flip Animation */
         .card-graphic {
             width: var(--card-w);
             height: var(--card-h);
@@ -157,23 +148,34 @@
             box-sizing: border-box;
             color: #111;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             user-select: none;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            perspective: 1000px;
+            animation: cardFlip 0.4s ease-out;
+        }
+        @keyframes cardFlip {
+            from { transform: rotateY(90deg); opacity: 0; }
+            to { transform: rotateY(0deg); opacity: 1; }
         }
         .card-graphic.red { color: #e74c3c; }
         .card-graphic.black { color: #2c3e50; }
+        .card-graphic.winning-highlight {
+            border: 2px solid var(--accent-gold-bright);
+            box-shadow: 0 0 15px var(--accent-gold-bright);
+            transform: scale(1.08);
+        }
         .card-back {
             background: repeating-linear-gradient(135deg, #2980b9, #2980b9 8px, #3498db 8px, #3498db 16px);
             border: 2px solid #fff;
         }
 
-        /* Player Seats / Pods */
+        /* Player Pods / Seats */
         .seat {
             position: absolute;
             width: 125px;
-            background: rgba(20, 24, 33, 0.95);
-            border: 2px solid #3a3f50;
+            background: rgba(18, 21, 28, 0.95);
+            border: 2px solid #363c4e;
             border-radius: 12px;
             padding: 8px;
             text-align: center;
@@ -181,13 +183,28 @@
             z-index: 5;
             transition: all 0.3s ease;
         }
-        .seat.is-me { border-color: var(--accent-gold-bright); background: rgba(35, 30, 15, 0.95); z-index: 10; }
-        .seat.active-turn { box-shadow: 0 0 20px var(--accent-gold-bright); border-color: var(--accent-gold-bright); }
-        .seat.folded { opacity: 0.45; filter: grayscale(0.8); }
+        .seat.is-me { border-color: var(--accent-gold-bright); background: rgba(32, 28, 16, 0.95); z-index: 10; }
+        .seat.active-turn {
+            box-shadow: 0 0 20px var(--accent-gold-bright);
+            border-color: var(--accent-gold-bright);
+            animation: pulseTurn 1.2s infinite alternate;
+        }
+        @keyframes pulseTurn {
+            from { box-shadow: 0 0 10px var(--accent-gold-bright); }
+            to { box-shadow: 0 0 22px var(--accent-gold-bright); }
+        }
+        .seat.folded { opacity: 0.4; filter: grayscale(0.8); }
 
         .seat-avatar { font-size: 20px; display: block; margin-bottom: 2px; }
         .seat-name { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .seat-chips { color: #2ecc71; font-weight: 700; margin-top: 2px; }
+
+        .badge-tag {
+            font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px;
+        }
+        .badge-dealer { background: #f1c40f; color: #000; }
+        .badge-sb { background: #e67e22; color: #fff; }
+        .badge-bb { background: #e74c3c; color: #fff; }
 
         .seat-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
         .seat-1 { bottom: 50px; left: 1%; }
@@ -196,7 +213,7 @@
         .seat-4 { top: 50px; right: 1%; }
         .seat-5 { bottom: 50px; right: 1%; }
 
-        /* Action Panel & Quick Bets */
+        /* Action Panel & Sliders */
         .action-panel {
             background: var(--panel-bg);
             padding: 15px;
@@ -205,12 +222,15 @@
             text-align: center;
         }
         .quick-bets { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
-        .quick-bets button { padding: 6px 12px; font-size: 12px; background: #2c3e50; }
+        .quick-bets button { padding: 6px 12px; font-size: 12px; background: #262c3a; }
 
-        /* QR Modal & Tables */
+        .raise-slider-container {
+            display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; max-width: 400px; margin: 10px auto;
+        }
+
         .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left; }
-        .ledger-table th, .ledger-table td { padding: 8px 10px; border: 1px solid #2a2e39; }
-        .ledger-table th { background: #111318; color: var(--accent-gold-bright); }
+        .ledger-table th, .ledger-table td { padding: 8px 10px; border: 1px solid #262a36; }
+        .ledger-table th { background: #0d0f12; color: var(--accent-gold-bright); }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -231,7 +251,7 @@
         
         <div class="lobby-grid">
             <!-- HOST CREATE CARD -->
-            <div style="background: #111318; padding: 15px; border-radius: 10px; border: 1px solid #2a2e39;">
+            <div style="background: #0d0f12; padding: 15px; border-radius: 10px; border: 1px solid #262a36;">
                 <h3 style="color: var(--accent-gold); margin-top: 0;">Create Table (Host)</h3>
                 <input type="text" id="host-room-id" placeholder="Room Code (e.g. POKER1)">
                 <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
@@ -255,7 +275,7 @@
             </div>
 
             <!-- PLAYER JOIN CARD -->
-            <div style="background: #111318; padding: 15px; border-radius: 10px; border: 1px solid #2a2e39;">
+            <div style="background: #0d0f12; padding: 15px; border-radius: 10px; border: 1px solid #262a36;">
                 <h3 style="color: var(--btn-green); margin-top: 0;">Join Table (Player)</h3>
                 <input type="text" id="join-room-id" placeholder="Room Code">
                 <input type="text" id="join-name" placeholder="Player Name">
@@ -287,7 +307,7 @@
         </div>
 
         <!-- HOST CONTROL PANEL -->
-        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #111318; margin-top: 15px;">
+        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #0d0f12; margin-top: 15px;">
             <h3 style="color: var(--accent-gold-bright); margin-top: 0;">Host Controls</h3>
             <button id="btn-start-hand" class="btn-green">Start Next Hand</button>
             <button id="btn-discontinue-hand" class="btn-red">Stop Current Hand</button>
@@ -320,16 +340,22 @@
         <div id="player-action-panel" class="action-panel">
             <div class="quick-bets">
                 <button onclick="setRaisePreset('min')">Min</button>
+                <button onclick="setRaisePreset('2.5x')">2.5x</button>
                 <button onclick="setRaisePreset('half_pot')">1/2 Pot</button>
                 <button onclick="setRaisePreset('pot')">Pot</button>
                 <button onclick="setRaisePreset('allin')">All In</button>
             </div>
-            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+
+            <div class="raise-slider-container">
+                <span style="font-size: 12px; color: #aaa;">Raise:</span>
+                <input type="range" id="raise-slider" min="0" max="1000" step="10" value="40" oninput="syncRaiseInput(this.value)">
+                <input type="number" id="raise-amount" style="width: 90px; margin: 0;" value="40" oninput="syncRaiseSlider(this.value)">
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                <button id="btn-fold" class="btn-red">Fold</button>
                 <button id="btn-check" class="btn-blue">Check</button>
                 <button id="btn-call" class="btn-green">Call $<span id="call-amount-label">0</span></button>
-                <button id="btn-fold" class="btn-red">Fold</button>
-                <span style="color:#666;">|</span>
-                <input type="number" id="raise-amount" style="width: 100px; display: inline-block;" value="40">
                 <button id="btn-raise" class="btn-gold">Raise Target</button>
             </div>
         </div>
@@ -365,7 +391,6 @@
         });
     }
 
-    // Avatar Selection Listeners
     document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(el => {
         el.addEventListener('click', () => {
             document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(a => a.classList.remove('selected'));
@@ -386,7 +411,6 @@
         document.getElementById('host-buyin').classList.toggle('hidden', !checked);
     }
 
-    // Auto reconnect
     socket.on('connect', () => {
         if (currentRoom) {
             socket.emit('reconnect_session', { room_id: currentRoom, session_id: sessionId });
@@ -412,16 +436,16 @@
         }
     });
 
-    function renderCardGraphic(card) {
+    function renderCardGraphic(card, isWinning = false) {
         if (!card) return `<div class="card-graphic card-back"></div>`;
         const suitsMap = { 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣' };
         const symbol = suitsMap[card.suit] || card.suit;
         const isRed = ['♥', '♦', 'H', 'D'].includes(card.suit);
 
         return `
-            <div class="card-graphic ${isRed ? 'red' : 'black'}">
+            <div class="card-graphic ${isRed ? 'red' : 'black'} ${isWinning ? 'winning-highlight' : ''}">
                 <div>${card.rank}</div>
-                <div style="text-align:center; font-size: 16px;">${symbol}</div>
+                <div style="text-align:center; font-size: 15px;">${symbol}</div>
                 <div style="text-align:right;">${card.rank}</div>
             </div>
         `;
@@ -512,6 +536,13 @@
         sendAction('raise', amt);
     });
 
+    function syncRaiseInput(val) {
+        document.getElementById('raise-amount').value = val;
+    }
+    function syncRaiseSlider(val) {
+        document.getElementById('raise-slider').value = val;
+    }
+
     function setRaisePreset(type) {
         if (!latestGameState) return;
         const myPlayer = latestGameState.players.find(p => p.sid === socket.id);
@@ -519,11 +550,14 @@
 
         let target = latestGameState.highest_bet;
         if (type === 'min') target = latestGameState.highest_bet + latestGameState.bb;
+        else if (type === '2.5x') target = Math.max(latestGameState.bb * 2.5, latestGameState.highest_bet * 2.5);
         else if (type === 'half_pot') target = latestGameState.highest_bet + (latestGameState.pot / 2);
         else if (type === 'pot') target = latestGameState.highest_bet + latestGameState.pot;
         else if (type === 'allin') target = myPlayer.chips + myPlayer.current_bet;
 
-        document.getElementById('raise-amount').value = Math.round(target);
+        const roundTarget = Math.round(target);
+        document.getElementById('raise-amount').value = roundTarget;
+        document.getElementById('raise-slider').value = roundTarget;
     }
 
     function sendAction(action, amount = 0) {
@@ -630,7 +664,7 @@
             } else {
                 joins.forEach(p => {
                     const card = document.createElement('div');
-                    card.style.cssText = 'background:#222; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
                     card.innerHTML = `<span><strong>Join:</strong> ${p.avatar || ''} ${p.name} ($${p.buy_in})</span>`;
                     const btn = document.createElement('button');
                     btn.className = 'btn-green';
@@ -642,7 +676,7 @@
 
                 cashes.forEach(c => {
                     const card = document.createElement('div');
-                    card.style.cssText = 'background:#222; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
                     card.innerHTML = `<span><strong>Cash:</strong> ${c.name} (+$${c.amount})</span>`;
                     const btn = document.createElement('button');
                     btn.className = 'btn-green';
@@ -656,12 +690,15 @@
             document.getElementById('host-ledger-container').innerHTML = renderLedgerTable(state.ledger_summary);
         }
 
-        // Render Community Cards
+        // Render Community Cards with winning hand highlights
         const ccContainer = document.getElementById('community-cards');
         ccContainer.innerHTML = '';
+        const winningList = state.winning_cards || [];
+
         for (let i = 0; i < 5; i++) {
             const card = (state.community_cards && state.community_cards[i]) ? state.community_cards[i] : null;
-            ccContainer.innerHTML += renderCardGraphic(card);
+            const isWin = card && winningList.some(w => w.rank === card.rank && w.suit === card.suit);
+            ccContainer.innerHTML += renderCardGraphic(card, isWin);
         }
 
         // Render Seats
@@ -669,12 +706,14 @@
         seatsContainer.innerHTML = '';
 
         let myCurrentBet = 0;
+        let myChips = 1000;
         let amIPlaying = false;
 
         state.players.forEach((p, idx) => {
             const isMe = (p.sid === socket.id);
             if (isMe) {
                 myCurrentBet = p.current_bet;
+                myChips = p.chips;
                 amIPlaying = true;
             }
 
@@ -682,10 +721,21 @@
             
             let cardsHtml = '';
             if (isMe && p.hole_cards && p.hole_cards.length > 0) {
-                cardsHtml = p.hole_cards.map(c => renderCardGraphic(c)).join('');
+                cardsHtml = p.hole_cards.map(c => {
+                    const isWin = winningList.some(w => w.rank === c.rank && w.suit === c.suit);
+                    return renderCardGraphic(c, isWin);
+                }).join('');
             } else if (state.street === 'SHOWDOWN' && p.hole_cards && p.hole_cards.length > 0) {
-                cardsHtml = p.hole_cards.map(c => renderCardGraphic(c)).join('');
+                cardsHtml = p.hole_cards.map(c => {
+                    const isWin = winningList.some(w => w.rank === c.rank && w.suit === c.suit);
+                    return renderCardGraphic(c, isWin);
+                }).join('');
             }
+
+            let badges = '';
+            if (p.is_dealer) badges += `<span class="badge-tag badge-dealer">D</span>`;
+            if (p.is_sb) badges += `<span class="badge-tag badge-sb">SB</span>`;
+            if (p.is_bb) badges += `<span class="badge-tag badge-bb">BB</span>`;
 
             let kickBtnHtml = (state.is_host && !isMe) 
                 ? `<button class="btn-red" style="padding:1px 5px; font-size:10px; margin-top:2px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
@@ -694,7 +744,7 @@
             seatsContainer.innerHTML += `
                 <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''} ${p.folded ? 'folded' : ''}">
                     <span class="seat-avatar">${p.avatar || '😎'}</span>
-                    <div class="seat-name">${p.name} ${p.is_dealer ? '🟡' : ''}</div>
+                    <div class="seat-name">${p.name} ${badges}</div>
                     <div class="seat-chips">$${p.chips.toFixed(0)}</div>
                     <div style="font-size:10px; color:#aaa;">Bet: $${p.current_bet.toFixed(0)}</div>
                     ${cardsHtml ? `<div style="display:flex; justify-content:center; gap:2px; margin-top:4px;">${cardsHtml}</div>` : ''}
@@ -704,6 +754,12 @@
         });
 
         document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
+
+        const minRaise = state.highest_bet + state.bb;
+        const maxRaise = myChips + myCurrentBet;
+        const slider = document.getElementById('raise-slider');
+        slider.min = minRaise;
+        slider.max = maxRaise;
 
         const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
         document.getElementById('call-amount-label').innerText = callNeeded.toFixed(0);
@@ -724,7 +780,6 @@
 
     socket.on('error', (err) => showModal('Error', `<p>${err.message}</p>`));
 
-    // Auto-fill room code from URL query string if scanned via QR
     const urlParams = new URLSearchParams(window.location.search);
     const urlRoom = urlParams.get('room');
     if (urlRoom) {
