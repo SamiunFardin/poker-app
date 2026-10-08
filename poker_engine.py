@@ -21,6 +21,8 @@ class Player:
         self.sid = sid
         self.session_id = session_id
         self.name = name
+        self.initial_buy_in = float(chips)
+        self.added_cash = 0.0
         self.chips = float(chips)
         self.current_bet = 0.0
         self.total_invested = 0.0
@@ -28,31 +30,39 @@ class Player:
         self.acted_this_street = False
         self.hole_cards = []
 
+    def get_net_pl(self):
+        total_in = self.initial_buy_in + self.added_cash
+        return self.chips - total_in
+
 class GameRoom:
-    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20):
+    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20, host_is_playing=False, host_name="Host Admin", host_buyin=1000):
         self.room_id = room_id
         self.host_sid = host_sid
         self.host_session_id = host_session_id
+        self.host_is_playing = host_is_playing
         self.sb = float(sb)
         self.bb = float(bb)
+        
         self.players = {}             # sid -> Player
         self.player_order = []        # list of sids
         self.session_map = {}         # session_id -> Player
         self.pending_joins = []
         self.pending_add_cash = []
-        self.left_players_history = []
+        self.left_players_history = [] # list of dicts with ledger history
         
         self.in_progress = False
         self.pot = 0.0
         self.highest_bet = 0.0
-        self.street = 'PREFLOP'       # PREFLOP, FLOP, TURN, RIVER, SHOWDOWN
+        self.street = 'PREFLOP'
         self.community_cards = []
         self.current_turn_idx = 0
         self.dealer_idx = 0
         self.dealer_sid = None
         self.deck = []
         self.last_hand_summary = "No hands played yet."
-        self.last_event_notice = None
+
+        if self.host_is_playing:
+            self.add_player(host_sid, host_session_id, host_name, host_buyin)
 
     def add_player(self, sid, session_id, name, chips):
         player = Player(sid, session_id, name, chips)
@@ -81,9 +91,13 @@ class GameRoom:
     def remove_player(self, sid, reason="Left Game"):
         if sid in self.players:
             p = self.players[sid]
+            total_in = p.initial_buy_in + p.added_cash
             self.left_players_history.append({
                 'name': p.name,
+                'initial_buy_in': p.initial_buy_in,
+                'added_cash': p.added_cash,
                 'final_chips': p.chips,
+                'net_pl': p.get_net_pl(),
                 'reason': reason
             })
             if p.session_id in self.session_map:
@@ -98,6 +112,30 @@ class GameRoom:
             if len([p for p in self.players.values() if not p.folded]) < 2 and self.in_progress:
                 self.discontinue_hand("Not enough players left in hand.")
 
+    def get_ledger_summary(self):
+        summary = []
+        for p in self.players.values():
+            summary.append({
+                'name': p.name,
+                'initial_buy_in': p.initial_buy_in,
+                'added_cash': p.added_cash,
+                'total_in': p.initial_buy_in + p.added_cash,
+                'chips': p.chips,
+                'net_pl': p.get_net_pl(),
+                'status': 'Active'
+            })
+        for item in self.left_players_history:
+            summary.append({
+                'name': item['name'],
+                'initial_buy_in': item['initial_buy_in'],
+                'added_cash': item['added_cash'],
+                'total_in': item['initial_buy_in'] + item['added_cash'],
+                'chips': item['final_chips'],
+                'net_pl': item['net_pl'],
+                'status': f"Left ({item['reason']})"
+            })
+        return summary
+
     def start_hand(self):
         active_players = [p for p in self.players.values() if p.chips > 0]
         if len(active_players) < 2:
@@ -108,7 +146,6 @@ class GameRoom:
         self.highest_bet = 0.0
         self.street = 'PREFLOP'
         self.community_cards = []
-        self.last_event_notice = None
 
         for p in self.players.values():
             p.current_bet = 0.0
@@ -191,7 +228,6 @@ class GameRoom:
 
         player = self.players[sid]
         player.acted_this_street = True
-        event_notice = None
 
         if action == 'fold':
             player.folded = True
