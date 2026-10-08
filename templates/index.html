@@ -2,69 +2,164 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Texas Hold'em Poker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Texas Hold'em Poker Lounge</title>
     <style>
         :root {
-            --felt-color: #12542a;
-            --table-rim: #2d1810;
-            --accent-gold: #f1c40f;
+            --bg-dark: #0f1115;
+            --panel-bg: #181b22;
+            --panel-border: #2a2e39;
+            --felt-gradient: radial-gradient(circle, #1e6b3b 0%, #114223 85%, #0a2916 100%);
+            --rim-color: #2b180d;
+            --accent-gold: #f39c12;
+            --accent-gold-bright: #f1c40f;
+            --btn-green: #27ae60;
+            --btn-red: #e74c3c;
+            --btn-blue: #2980b9;
             --card-w: 48px;
             --card-h: 68px;
         }
 
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: #ecf0f1;
             margin: 0;
             padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
 
-        .container { width: 100%; max-width: 1000px; }
-        .card-panel { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .container { width: 100%; max-width: 1050px; }
+
+        /* Panels & Cards */
+        .card-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
         .hidden { display: none !important; }
 
-        input, button {
-            padding: 10px 14px; margin: 4px; border-radius: 6px;
-            border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px;
+        /* Inputs & Buttons */
+        input[type="text"], input[type="number"], select {
+            padding: 10px 14px;
+            margin: 6px 0;
+            border-radius: 8px;
+            border: 1px solid #34495e;
+            background: #0d0f12;
+            color: #fff;
+            font-size: 14px;
+            width: 100%;
         }
 
-        button { background: #27ae60; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background: #2ecc71; }
-        button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
-        button.btn-danger { background: #c0392b; }
-        button.btn-warning { background: #d35400; }
+        button {
+            padding: 10px 18px;
+            margin: 4px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        button:hover { filter: brightness(1.15); }
+        button:active { transform: scale(0.97); }
+        button:disabled { background: #444 !important; color: #888; cursor: not-allowed; opacity: 0.5; filter: none; }
 
+        .btn-green { background: var(--btn-green); color: #fff; }
+        .btn-red { background: var(--btn-red); color: #fff; }
+        .btn-blue { background: var(--btn-blue); color: #fff; }
+        .btn-gold { background: var(--accent-gold); color: #000; }
+
+        /* Lobby Grid */
+        .lobby-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
+
+        .avatar-picker {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .avatar-opt {
+            font-size: 22px;
+            padding: 6px 10px;
+            background: #0d0f12;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .avatar-opt.selected { border-color: var(--accent-gold); background: #222; }
+
+        /* Poker Table */
         .poker-table-container {
-            position: relative; width: 100%; height: 520px; margin: 10px 0;
-            display: flex; justify-content: center; align-items: center;
+            position: relative;
+            width: 100%;
+            height: 480px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .poker-table {
-            position: relative; width: 80%; height: 320px;
-            background: radial-gradient(circle, #196f3d 0%, var(--felt-color) 85%);
-            border: 14px solid var(--table-rim); border-radius: 180px;
-            box-shadow: inset 0 0 25px #000, 0 10px 30px rgba(0,0,0,0.8);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+            width: 82%;
+            height: 320px;
+            background: var(--felt-gradient);
+            border: 14px solid var(--rim-color);
+            border-radius: 170px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 12px 35px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .pot-badge {
-            font-size: 18px; font-weight: bold; color: var(--accent-gold);
-            background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 16px;
-            border: 1px solid var(--accent-gold); margin-bottom: 8px; text-align: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--accent-gold-bright);
+            background: rgba(0,0,0,0.75);
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--accent-gold);
+            margin-bottom: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
-        .community-cards { display: flex; gap: 6px; min-height: var(--card-h); }
+        .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
 
+        /* Playing Cards */
         .card-graphic {
-            width: var(--card-w); height: var(--card-h); background: #ffffff;
-            border-radius: 5px; display: inline-flex; flex-direction: column;
-            justify-content: space-between; padding: 3px; box-sizing: border-box;
-            color: #000; font-weight: bold; font-size: 13px; user-select: none;
+            width: var(--card-w);
+            height: var(--card-h);
+            background: #ffffff;
+            border-radius: 6px;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            box-sizing: border-box;
+            color: #111;
+            font-weight: bold;
+            font-size: 13px;
+            user-select: none;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
         }
         .card-graphic.red { color: #e74c3c; }
         .card-graphic.black { color: #2c3e50; }
@@ -73,97 +168,138 @@
             border: 2px solid #fff;
         }
 
+        /* Player Seats / Pods */
         .seat {
-            position: absolute; width: 130px; background: rgba(25, 25, 25, 0.95);
-            border: 2px solid #444; border-radius: 8px; padding: 6px;
-            text-align: center; font-size: 12px; z-index: 5;
+            position: absolute;
+            width: 125px;
+            background: rgba(20, 24, 33, 0.95);
+            border: 2px solid #3a3f50;
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            z-index: 5;
+            transition: all 0.3s ease;
         }
-        .seat.is-me { border-color: var(--accent-gold); background: rgba(35, 35, 10, 0.95); z-index: 10; }
-        .seat.active-turn { box-shadow: 0 0 18px var(--accent-gold); }
+        .seat.is-me { border-color: var(--accent-gold-bright); background: rgba(35, 30, 15, 0.95); z-index: 10; }
+        .seat.active-turn { box-shadow: 0 0 20px var(--accent-gold-bright); border-color: var(--accent-gold-bright); }
+        .seat.folded { opacity: 0.45; filter: grayscale(0.8); }
+
+        .seat-avatar { font-size: 20px; display: block; margin-bottom: 2px; }
+        .seat-name { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .seat-chips { color: #2ecc71; font-weight: 700; margin-top: 2px; }
 
         .seat-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
-        .seat-1 { bottom: 60px; left: 1%; }
-        .seat-2 { top: 60px; left: 1%; }
+        .seat-1 { bottom: 50px; left: 1%; }
+        .seat-2 { top: 50px; left: 1%; }
         .seat-3 { top: 0px; left: 50%; transform: translateX(-50%); }
-        .seat-4 { top: 60px; right: 1%; }
-        .seat-5 { bottom: 60px; right: 1%; }
+        .seat-4 { top: 50px; right: 1%; }
+        .seat-5 { bottom: 50px; right: 1%; }
 
-        .request-card {
-            background: #252525; padding: 8px 12px; border-radius: 8px;
-            margin: 6px 0; border-left: 4px solid var(--accent-gold);
-            display: flex; justify-content: space-between; align-items: center;
+        /* Action Panel & Quick Bets */
+        .action-panel {
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            text-align: center;
         }
+        .quick-bets { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
+        .quick-bets button { padding: 6px 12px; font-size: 12px; background: #2c3e50; }
 
-        .ledger-table {
-            width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;
-        }
-        .ledger-table th, .ledger-table td {
-            padding: 8px; border: 1px solid #444;
-        }
-        .ledger-table th { background: #333; color: var(--accent-gold); }
+        /* QR Modal & Tables */
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left; }
+        .ledger-table th, .ledger-table td { padding: 8px 10px; border: 1px solid #2a2e39; }
+        .ledger-table th { background: #111318; color: var(--accent-gold-bright); }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-box {
-            background: #222; padding: 25px; border-radius: 12px; max-width: 550px; width: 92%; text-align: center; border: 2px solid var(--accent-gold);
+            background: var(--panel-bg); padding: 22px; border-radius: 14px; max-width: 550px; width: 92%; text-align: center; border: 2px solid var(--accent-gold);
         }
+        #qrcode-canvas { margin: 15px auto; background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- LOBBY -->
+    <!-- LOBBY SECTION -->
     <div id="lobby-section" class="card-panel">
-        <h2>Texas Hold'em - Game Lobby</h2>
-        <div>
-            <h3>Create Table (Host Admin)</h3>
-            <input type="text" id="host-room-id" placeholder="Room Code (e.g. ROOM1)">
-            <input type="text" id="host-name" placeholder="Admin / Player Name" value="Host Admin">
-            <div style="margin: 10px 0;">
-                <label style="font-size: 14px; cursor: pointer;">
-                    <input type="checkbox" id="host-is-playing" onchange="toggleHostBuyin(this.checked)"> Play in game as a player
-                </label>
+        <h1 style="text-align: center; color: var(--accent-gold-bright); margin-top: 0;">♠ Texas Hold'em Lounge ♣</h1>
+        
+        <div class="lobby-grid">
+            <!-- HOST CREATE CARD -->
+            <div style="background: #111318; padding: 15px; border-radius: 10px; border: 1px solid #2a2e39;">
+                <h3 style="color: var(--accent-gold); margin-top: 0;">Create Table (Host)</h3>
+                <input type="text" id="host-room-id" placeholder="Room Code (e.g. POKER1)">
+                <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
+                
+                <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
+                <div class="avatar-picker" id="host-avatar-picker">
+                    <span class="avatar-opt selected" data-avatar="👑">👑</span>
+                    <span class="avatar-opt" data-avatar="😎">😎</span>
+                    <span class="avatar-opt" data-avatar="🎩">🎩</span>
+                    <span class="avatar-opt" data-avatar="🔥">🔥</span>
+                </div>
+
+                <div style="margin: 10px 0;">
+                    <label style="font-size: 14px; cursor: pointer; color: #fff;">
+                        <input type="checkbox" id="host-is-playing" onchange="toggleHostBuyin(this.checked)"> Play in game as a player
+                    </label>
+                </div>
+                <input type="number" id="host-buyin" class="hidden" placeholder="Host Starting Chips" value="1000">
+                
+                <button id="btn-create-room" class="btn-gold" style="width: 100%; margin-top: 10px;">Create Room</button>
             </div>
-            <input type="number" id="host-buyin" class="hidden" placeholder="Host Starting Chips" value="1000">
-            <button id="btn-create-room">Create Table</button>
-        </div>
-        <hr style="border-color: #333; margin: 15px 0;">
-        <div>
-            <h3>Join Table (Player)</h3>
-            <input type="text" id="join-room-id" placeholder="Room Code">
-            <input type="text" id="join-name" placeholder="Player Name">
-            <input type="number" id="join-buyin" placeholder="Starting Chips" value="1000">
-            <button id="btn-join-room">Join Table</button>
+
+            <!-- PLAYER JOIN CARD -->
+            <div style="background: #111318; padding: 15px; border-radius: 10px; border: 1px solid #2a2e39;">
+                <h3 style="color: var(--btn-green); margin-top: 0;">Join Table (Player)</h3>
+                <input type="text" id="join-room-id" placeholder="Room Code">
+                <input type="text" id="join-name" placeholder="Player Name">
+                <input type="number" id="join-buyin" placeholder="Starting Chips" value="1000">
+
+                <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
+                <div class="avatar-picker" id="join-avatar-picker">
+                    <span class="avatar-opt selected" data-avatar="😎">😎</span>
+                    <span class="avatar-opt" data-avatar="🎲">🎲</span>
+                    <span class="avatar-opt" data-avatar="🦁">🦁</span>
+                    <span class="avatar-opt" data-avatar="🤖">🤖</span>
+                </div>
+
+                <button id="btn-join-room" class="btn-green" style="width: 100%; margin-top: 10px;">Join Table</button>
+            </div>
         </div>
     </div>
 
     <!-- GAME SECTION -->
     <div id="game-section" class="card-panel hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Room Code: <span id="display-room-id" style="color: var(--accent-gold);"></span> <span id="host-indicator" class="hidden" style="color: #2ecc71; font-size: 14px;">(Host Admin)</span></h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0;">Room Code: <span id="display-room-id" style="color: var(--accent-gold-bright);"></span></h2>
             <div>
-                <button id="btn-add-cash-req" class="hidden">Request Cash</button>
-                <button id="btn-view-last-hand">View Last Hand</button>
-                <button id="btn-exit-game" class="btn-danger">Exit Game</button>
+                <button id="btn-show-qr" class="btn-blue hidden">QR Code</button>
+                <button id="btn-add-cash-req" class="btn-green hidden">Request Cash</button>
+                <button id="btn-view-last-hand">Last Hand</button>
+                <button id="btn-exit-game" class="btn-red">Exit Game</button>
             </div>
         </div>
 
         <!-- HOST CONTROL PANEL -->
-        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #161616;">
-            <h3 style="color: var(--accent-gold); margin-top: 0;">Host Control Panel</h3>
-            <button id="btn-start-hand" style="font-size: 15px;">Start Next Hand</button>
-            <button id="btn-discontinue-hand" class="btn-warning" style="font-size: 15px;">Discontinue Current Hand</button>
+        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #111318; margin-top: 15px;">
+            <h3 style="color: var(--accent-gold-bright); margin-top: 0;">Host Controls</h3>
+            <button id="btn-start-hand" class="btn-green">Start Next Hand</button>
+            <button id="btn-discontinue-hand" class="btn-red">Stop Current Hand</button>
             
-            <div style="margin-top: 12px;">
-                <h4 style="margin: 5px 0; color: #fff;">Pending Approvals (<span id="request-count">0</span>):</h4>
+            <div style="margin-top: 10px;">
+                <h4 style="margin: 5px 0;">Pending Requests (<span id="request-count">0</span>):</h4>
                 <div id="pending-requests-list"></div>
             </div>
 
-            <!-- PLAYER ACCOUNT LEDGER (HOST ONLY) -->
+            <!-- HOST LIVE PLAYER LEDGER -->
             <div style="margin-top: 15px;">
-                <h4 style="margin: 5px 0; color: var(--accent-gold);">Current Players' Account Details (Ledger)</h4>
+                <h4 style="margin: 5px 0; color: var(--accent-gold-bright);">Players Account Details (Ledger)</h4>
                 <div id="host-ledger-container" style="overflow-x: auto;"></div>
             </div>
         </div>
@@ -173,7 +309,7 @@
             <div class="poker-table">
                 <div class="pot-badge">
                     <div>Total Pot: $<span id="pot-amount">0</span></div>
-                    <div style="font-size: 12px; color: #aaa; margin-top:2px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | Highest Bet: $<span id="high-bet-amount">0</span></div>
+                    <div style="font-size: 11px; color: #aaa; margin-top:2px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | High Bet: $<span id="high-bet-amount">0</span></div>
                 </div>
                 <div class="community-cards" id="community-cards"></div>
             </div>
@@ -181,13 +317,21 @@
         </div>
 
         <!-- PLAYER ACTION CONTROLS -->
-        <div id="player-action-panel" class="card-panel" style="background: #2a2a2a; text-align: center;">
-            <button id="btn-check">Check</button>
-            <button id="btn-call">Call $<span id="call-amount-label">0</span></button>
-            <button id="btn-fold" class="btn-danger">Fold</button>
-            <span style="margin: 0 8px;">|</span>
-            <input type="number" id="raise-amount" style="width: 90px;" value="40">
-            <button id="btn-raise">Raise / Bet Target</button>
+        <div id="player-action-panel" class="action-panel">
+            <div class="quick-bets">
+                <button onclick="setRaisePreset('min')">Min</button>
+                <button onclick="setRaisePreset('half_pot')">1/2 Pot</button>
+                <button onclick="setRaisePreset('pot')">Pot</button>
+                <button onclick="setRaisePreset('allin')">All In</button>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button id="btn-check" class="btn-blue">Check</button>
+                <button id="btn-call" class="btn-green">Call $<span id="call-amount-label">0</span></button>
+                <button id="btn-fold" class="btn-red">Fold</button>
+                <span style="color:#666;">|</span>
+                <input type="number" id="raise-amount" style="width: 100px; display: inline-block;" value="40">
+                <button id="btn-raise" class="btn-gold">Raise Target</button>
+            </div>
         </div>
     </div>
 </div>
@@ -195,21 +339,24 @@
 <!-- MODAL POPUP -->
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
-        <h2 id="modal-title" style="color: var(--accent-gold);">Notification</h2>
-        <div id="modal-body" style="font-size: 15px; line-height: 1.5; margin: 15px 0;"></div>
-        <button id="btn-close-modal">Dismiss</button>
+        <h2 id="modal-title" style="color: var(--accent-gold-bright); margin-top:0;">Notification</h2>
+        <div id="modal-body" style="font-size: 14px; line-height: 1.5; margin: 15px 0;"></div>
+        <button id="btn-close-modal" class="btn-gold">Dismiss</button>
     </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     const socket = io();
     let currentRoom = localStorage.getItem('poker_room_id') || '';
     let sessionId = localStorage.getItem('poker_session_id') || createUUID();
     localStorage.setItem('poker_session_id', sessionId);
     let isHost = false;
-    let hostIsPlaying = false;
+    let selectedHostAvatar = '👑';
+    let selectedJoinAvatar = '😎';
     let lastHandSummaryText = "No hands played yet.";
+    let latestGameState = null;
 
     function createUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -218,11 +365,28 @@
         });
     }
 
+    // Avatar Selection Listeners
+    document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedHostAvatar = el.getAttribute('data-avatar');
+        });
+    });
+
+    document.querySelectorAll('#join-avatar-picker .avatar-opt').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('#join-avatar-picker .avatar-opt').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedJoinAvatar = el.getAttribute('data-avatar');
+        });
+    });
+
     function toggleHostBuyin(checked) {
         document.getElementById('host-buyin').classList.toggle('hidden', !checked);
     }
 
-    // Auto reconnect on refresh
+    // Auto reconnect
     socket.on('connect', () => {
         if (currentRoom) {
             socket.emit('reconnect_session', { room_id: currentRoom, session_id: sessionId });
@@ -239,7 +403,7 @@
 
             if (isHost) {
                 document.getElementById('host-controls').classList.remove('hidden');
-                document.getElementById('host-indicator').classList.remove('hidden');
+                document.getElementById('btn-show-qr').classList.remove('hidden');
             } else {
                 document.getElementById('btn-add-cash-req').classList.remove('hidden');
             }
@@ -275,6 +439,7 @@
         socket.emit('create_room', {
             room_id: roomId,
             host_name: hostName,
+            avatar: selectedHostAvatar,
             host_is_playing: isPlaying,
             host_buyin: hostBuyin,
             session_id: sessionId
@@ -288,22 +453,37 @@
         if (!roomId || !playerName) return alert('Enter Room Code and Player Name');
         currentRoom = roomId;
         localStorage.setItem('poker_room_id', currentRoom);
-        socket.emit('join_room_request', { room_id: roomId, player_name: playerName, buy_in: buyIn, session_id: sessionId });
+        socket.emit('join_room_request', {
+            room_id: roomId,
+            player_name: playerName,
+            avatar: selectedJoinAvatar,
+            buy_in: buyIn,
+            session_id: sessionId
+        });
     });
 
-    document.getElementById('btn-start-hand').addEventListener('click', () => {
-        socket.emit('start_hand', { room_id: currentRoom });
+    document.getElementById('btn-show-qr').addEventListener('click', () => {
+        const joinUrl = window.location.origin + '?room=' + currentRoom;
+        showModal('Scan to Join Room', `
+            <p>Players can scan this QR code to open the game:</p>
+            <div id="qrcode-canvas"></div>
+            <p style="font-weight:bold; color:var(--accent-gold-bright);">${currentRoom}</p>
+        `);
+        setTimeout(() => {
+            document.getElementById('qrcode-canvas').innerHTML = '';
+            new QRCode(document.getElementById('qrcode-canvas'), { text: joinUrl, width: 160, height: 160 });
+        }, 100);
     });
+
+    document.getElementById('btn-start-hand').addEventListener('click', () => socket.emit('start_hand', { room_id: currentRoom }));
 
     document.getElementById('btn-discontinue-hand').addEventListener('click', () => {
-        if (confirm("Discontinue current hand?")) {
-            socket.emit('discontinue_hand', { room_id: currentRoom });
-        }
+        if (confirm("Discontinue current hand?")) socket.emit('discontinue_hand', { room_id: currentRoom });
     });
 
     document.getElementById('btn-exit-game').addEventListener('click', () => {
         if (isHost) {
-            if (confirm("Exiting as Host will close the room for everyone. Are you sure you want to exit and close the game?")) {
+            if (confirm("Exiting as Host will close the room for everyone. Are you sure?")) {
                 socket.emit('close_room_by_host', { room_id: currentRoom });
             }
         } else {
@@ -317,9 +497,7 @@
 
     document.getElementById('btn-add-cash-req').addEventListener('click', () => {
         const amt = prompt("Enter cash amount:", "500");
-        if (amt && !isNaN(amt)) {
-            socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
-        }
+        if (amt && !isNaN(amt)) socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
     });
 
     document.getElementById('btn-view-last-hand').addEventListener('click', () => {
@@ -333,6 +511,20 @@
         const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
         sendAction('raise', amt);
     });
+
+    function setRaisePreset(type) {
+        if (!latestGameState) return;
+        const myPlayer = latestGameState.players.find(p => p.sid === socket.id);
+        if (!myPlayer) return;
+
+        let target = latestGameState.highest_bet;
+        if (type === 'min') target = latestGameState.highest_bet + latestGameState.bb;
+        else if (type === 'half_pot') target = latestGameState.highest_bet + (latestGameState.pot / 2);
+        else if (type === 'pot') target = latestGameState.highest_bet + latestGameState.pot;
+        else if (type === 'allin') target = myPlayer.chips + myPlayer.current_bet;
+
+        document.getElementById('raise-amount').value = Math.round(target);
+    }
 
     function sendAction(action, amount = 0) {
         socket.emit('player_action', { room_id: currentRoom, action: action, amount: amount });
@@ -350,15 +542,12 @@
 
     socket.on('room_created', (data) => {
         isHost = true;
-        hostIsPlaying = data.host_is_playing;
         document.getElementById('lobby-section').classList.add('hidden');
         document.getElementById('game-section').classList.remove('hidden');
         document.getElementById('host-controls').classList.remove('hidden');
-        document.getElementById('host-indicator').classList.remove('hidden');
+        document.getElementById('btn-show-qr').classList.remove('hidden');
         document.getElementById('display-room-id').innerText = data.room_id;
-        if (hostIsPlaying) {
-            document.getElementById('btn-add-cash-req').classList.remove('hidden');
-        }
+        if (data.host_is_playing) document.getElementById('btn-add-cash-req').classList.remove('hidden');
     });
 
     socket.on('join_pending', (data) => showModal('Request Sent', `<p>${data.message}</p>`));
@@ -383,12 +572,10 @@
         let ledgerHtml = renderLedgerTable(data.ledger);
         showModal('📢 Game Ended & Room Closed', `
             <p style="color:#e74c3c; font-weight:bold;">${data.message}</p>
-            <p style="font-size:13px; color:#aaa;">Please take a screenshot of the final account ledger below for your records:</p>
+            <p style="font-size:12px; color:#aaa;">Please take a screenshot of the final ledger below:</p>
             ${ledgerHtml}
         `);
-        document.getElementById('btn-close-modal').onclick = () => {
-            location.reload();
-        };
+        document.getElementById('btn-close-modal').onclick = () => location.reload();
     });
 
     function renderLedgerTable(ledger) {
@@ -398,11 +585,11 @@
             const sign = p.net_pl >= 0 ? '+' : '';
             return `
                 <tr>
-                    <td><strong>${p.name}</strong> <span style="font-size:10px; color:#aaa;">(${p.status})</span></td>
-                    <td>$${p.initial_buy_in.toFixed(2)}</td>
-                    <td>$${p.added_cash.toFixed(2)}</td>
-                    <td>$${p.chips.toFixed(2)}</td>
-                    <td style="color:${netColor}; font-weight:bold;">${sign}$${p.net_pl.toFixed(2)}</td>
+                    <td>${p.avatar || '😎'} <strong>${p.name}</strong> <span style="font-size:10px; color:#aaa;">(${p.status})</span></td>
+                    <td>$${p.initial_buy_in.toFixed(0)}</td>
+                    <td>$${p.added_cash.toFixed(0)}</td>
+                    <td>$${p.chips.toFixed(0)}</td>
+                    <td style="color:${netColor}; font-weight:bold;">${sign}$${p.net_pl.toFixed(0)}</td>
                 </tr>
             `;
         }).join('');
@@ -414,7 +601,7 @@
                         <th>Player</th>
                         <th>Initial</th>
                         <th>Added</th>
-                        <th>Current</th>
+                        <th>Chips</th>
                         <th>Net P/L</th>
                     </tr>
                 </thead>
@@ -424,9 +611,10 @@
     }
 
     socket.on('game_state', (state) => {
+        latestGameState = state;
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
-        document.getElementById('pot-amount').innerText = state.pot.toFixed(2);
-        document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(2);
+        document.getElementById('pot-amount').innerText = state.pot.toFixed(0);
+        document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(0);
         document.getElementById('street-name').innerText = state.street;
 
         if (state.is_host) {
@@ -435,7 +623,6 @@
 
             const joins = state.pending_joins || [];
             const cashes = state.pending_add_cash || [];
-            
             document.getElementById('request-count').innerText = joins.length + cashes.length;
 
             if (joins.length === 0 && cashes.length === 0) {
@@ -443,9 +630,10 @@
             } else {
                 joins.forEach(p => {
                     const card = document.createElement('div');
-                    card.className = 'request-card';
-                    card.innerHTML = `<div><strong>Join:</strong> ${p.name} ($${p.buy_in})</div>`;
+                    card.style.cssText = 'background:#222; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.innerHTML = `<span><strong>Join:</strong> ${p.avatar || ''} ${p.name} ($${p.buy_in})</span>`;
                     const btn = document.createElement('button');
+                    btn.className = 'btn-green';
                     btn.innerText = 'Approve';
                     btn.onclick = () => socket.emit('approve_join', { room_id: currentRoom, sid: p.sid });
                     card.appendChild(btn);
@@ -454,9 +642,10 @@
 
                 cashes.forEach(c => {
                     const card = document.createElement('div');
-                    card.className = 'request-card';
-                    card.innerHTML = `<div><strong>Cash:</strong> ${c.name} (+$${c.amount})</div>`;
+                    card.style.cssText = 'background:#222; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-between; align-items:center;';
+                    card.innerHTML = `<span><strong>Cash:</strong> ${c.name} (+$${c.amount})</span>`;
                     const btn = document.createElement('button');
+                    btn.className = 'btn-green';
                     btn.innerText = 'Approve';
                     btn.onclick = () => socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount });
                     card.appendChild(btn);
@@ -464,7 +653,6 @@
                 });
             }
 
-            // Render Host Live Account Ledger
             document.getElementById('host-ledger-container').innerHTML = renderLedgerTable(state.ledger_summary);
         }
 
@@ -476,7 +664,7 @@
             ccContainer.innerHTML += renderCardGraphic(card);
         }
 
-        // Render Table Seats
+        // Render Seats
         const seatsContainer = document.getElementById('seats-container');
         seatsContainer.innerHTML = '';
 
@@ -500,25 +688,25 @@
             }
 
             let kickBtnHtml = (state.is_host && !isMe) 
-                ? `<button class="btn-danger" style="padding:1px 5px; font-size:10px; margin-top:2px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
+                ? `<button class="btn-red" style="padding:1px 5px; font-size:10px; margin-top:2px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
                 : '';
 
             seatsContainer.innerHTML += `
-                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''}">
-                    <div><strong>${p.name}</strong> ${p.is_dealer ? '<span style="background:#fff; color:#000; padding:1px 3px; border-radius:50%; font-size:9px;">D</span>' : ''}</div>
-                    <div>Chips: $${p.chips.toFixed(2)}</div>
-                    <div>Bet: $${p.current_bet.toFixed(2)} ${p.folded ? '<span style="color:#e74c3c;">(Folded)</span>' : ''}</div>
+                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''} ${p.folded ? 'folded' : ''}">
+                    <span class="seat-avatar">${p.avatar || '😎'}</span>
+                    <div class="seat-name">${p.name} ${p.is_dealer ? '🟡' : ''}</div>
+                    <div class="seat-chips">$${p.chips.toFixed(0)}</div>
+                    <div style="font-size:10px; color:#aaa;">Bet: $${p.current_bet.toFixed(0)}</div>
                     ${cardsHtml ? `<div style="display:flex; justify-content:center; gap:2px; margin-top:4px;">${cardsHtml}</div>` : ''}
                     ${kickBtnHtml}
                 </div>
             `;
         });
 
-        // Hide action controls if spectator host
         document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
 
         const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
-        document.getElementById('call-amount-label').innerText = callNeeded.toFixed(2);
+        document.getElementById('call-amount-label').innerText = callNeeded.toFixed(0);
 
         if (amIPlaying) {
             const myTurn = (socket.id === state.current_turn_sid);
@@ -535,6 +723,13 @@
     }
 
     socket.on('error', (err) => showModal('Error', `<p>${err.message}</p>`));
+
+    // Auto-fill room code from URL query string if scanned via QR
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoom = urlParams.get('room');
+    if (urlRoom) {
+        document.getElementById('join-room-id').value = urlRoom.toUpperCase();
+    }
 </script>
 </body>
 </html>
