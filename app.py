@@ -57,9 +57,9 @@ def handle_reconnect(data):
         room.host_sid = request.sid
         if room.host_is_playing:
             room.rebind_socket(None, request.sid, session_id)
-        emit('session_restored', {'success': True, 'is_host': True, 'room_id': room_id, 'session_id': session_id})
+        emit('session_restored', {'success': True, 'is_host': True, 'room_id': room_id, 'session_id': session_id, 'host_is_playing': room.host_is_playing})
     elif room.rebind_socket(None, request.sid, session_id):
-        emit('session_restored', {'success': True, 'is_host': False, 'room_id': room_id, 'session_id': session_id})
+        emit('session_restored', {'success': True, 'is_host': False, 'room_id': room_id, 'session_id': session_id, 'host_is_playing': False})
     else:
         emit('session_restored', {'success': False})
         return
@@ -287,6 +287,7 @@ def broadcast_room_state(room_id):
         state = {
             'room_id': room.room_id,
             'is_host': is_host,
+            'host_is_playing': room.host_is_playing,
             'in_progress': room.in_progress,
             'street': room.street,
             'pot': room.pot,
