@@ -17,10 +17,11 @@ class CardModel:
         return f"{r}{s}"
 
 class Player:
-    def __init__(self, sid, session_id, name, chips):
+    def __init__(self, sid, session_id, name, chips, avatar="😎"):
         self.sid = sid
         self.session_id = session_id
         self.name = name
+        self.avatar = avatar
         self.initial_buy_in = float(chips)
         self.added_cash = 0.0
         self.chips = float(chips)
@@ -35,7 +36,7 @@ class Player:
         return self.chips - total_in
 
 class GameRoom:
-    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20, host_is_playing=False, host_name="Host Admin", host_buyin=1000):
+    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20, host_is_playing=False, host_name="Host Admin", host_buyin=1000, host_avatar="👑"):
         self.room_id = room_id
         self.host_sid = host_sid
         self.host_session_id = host_session_id
@@ -48,7 +49,7 @@ class GameRoom:
         self.session_map = {}         # session_id -> Player
         self.pending_joins = []
         self.pending_add_cash = []
-        self.left_players_history = [] # list of dicts with ledger history
+        self.left_players_history = [] # ledger history
         
         self.in_progress = False
         self.pot = 0.0
@@ -62,10 +63,10 @@ class GameRoom:
         self.last_hand_summary = "No hands played yet."
 
         if self.host_is_playing:
-            self.add_player(host_sid, host_session_id, host_name, host_buyin)
+            self.add_player(host_sid, host_session_id, host_name, host_buyin, host_avatar)
 
-    def add_player(self, sid, session_id, name, chips):
-        player = Player(sid, session_id, name, chips)
+    def add_player(self, sid, session_id, name, chips, avatar="😎"):
+        player = Player(sid, session_id, name, chips, avatar)
         self.players[sid] = player
         self.session_map[session_id] = player
         if sid not in self.player_order:
@@ -91,7 +92,6 @@ class GameRoom:
     def remove_player(self, sid, reason="Left Game"):
         if sid in self.players:
             p = self.players[sid]
-            total_in = p.initial_buy_in + p.added_cash
             self.left_players_history.append({
                 'name': p.name,
                 'initial_buy_in': p.initial_buy_in,
@@ -117,6 +117,7 @@ class GameRoom:
         for p in self.players.values():
             summary.append({
                 'name': p.name,
+                'avatar': p.avatar,
                 'initial_buy_in': p.initial_buy_in,
                 'added_cash': p.added_cash,
                 'total_in': p.initial_buy_in + p.added_cash,
@@ -127,6 +128,7 @@ class GameRoom:
         for item in self.left_players_history:
             summary.append({
                 'name': item['name'],
+                'avatar': '🚪',
                 'initial_buy_in': item['initial_buy_in'],
                 'added_cash': item['added_cash'],
                 'total_in': item['initial_buy_in'] + item['added_cash'],
@@ -260,7 +262,7 @@ class GameRoom:
         if len(active_unfolded) == 1:
             winner = active_unfolded[0]
             winner.chips += self.pot
-            summary = f"Winner: {winner.name}\nAmount Won: ${self.pot:.2f}\nReason: All other players folded."
+            summary = f"🏆 Winner: {winner.name}\n💰 Amount Won: ${self.pot:.2f}\nReason: All other players folded."
             self.last_hand_summary = summary
             self.in_progress = False
             return True, "Hand ended by fold.", {'type': 'hand_ended', 'summary': summary}
