@@ -49,7 +49,7 @@ class GameRoom:
         self.session_map = {}         # session_id -> Player
         self.pending_joins = []
         self.pending_add_cash = []
-        self.left_players_history = [] # ledger history
+        self.left_players_history = []
         
         self.in_progress = False
         self.pot = 0.0
@@ -59,6 +59,9 @@ class GameRoom:
         self.current_turn_idx = 0
         self.dealer_idx = 0
         self.dealer_sid = None
+        self.sb_sid = None
+        self.bb_sid = None
+        self.winning_cards = []
         self.deck = []
         self.last_hand_summary = "No hands played yet."
 
@@ -148,6 +151,7 @@ class GameRoom:
         self.highest_bet = 0.0
         self.street = 'PREFLOP'
         self.community_cards = []
+        self.winning_cards = []
 
         for p in self.players.values():
             p.current_bet = 0.0
@@ -172,8 +176,11 @@ class GameRoom:
         sb_idx = (self.dealer_idx + 1) % n
         bb_idx = (self.dealer_idx + 2) % n if n > 2 else sb_idx
 
-        sb_player = self.players[self.player_order[sb_idx]]
-        bb_player = self.players[self.player_order[bb_idx]]
+        self.sb_sid = self.player_order[sb_idx]
+        self.bb_sid = self.player_order[bb_idx]
+
+        sb_player = self.players[self.sb_sid]
+        bb_player = self.players[self.bb_sid]
 
         sb_amt = min(self.sb, sb_player.chips)
         bb_amt = min(self.bb, bb_player.chips)
@@ -218,6 +225,7 @@ class GameRoom:
         self.pot = 0.0
         self.street = 'PREFLOP'
         self.community_cards = []
+        self.winning_cards = []
         self.last_hand_summary = f"Hand Discontinued: {reason}"
 
     def process_action(self, sid, action, amount=0.0):
@@ -349,6 +357,12 @@ class GameRoom:
         winner_names = ", ".join(w.name for w in winners)
         for w in winners:
             w.chips += split_pot
+
+        # Store winning hole cards to highlight them
+        self.winning_cards = []
+        for w in winners:
+            for c in w.hole_cards:
+                self.winning_cards.append(c.to_dict())
 
         final_summary = f"🏆 WINNER: {winner_names}\n💰 POT WON: ${self.pot:.2f}\n\nEVALUATION:\n" + "\n".join(summary_lines)
         self.last_hand_summary = final_summary
