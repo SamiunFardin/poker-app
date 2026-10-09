@@ -250,7 +250,12 @@ def handle_player_action(data):
         if event_notice['type'] == 'community_cards':
             socketio.emit('notification', {'title': event_notice['title'], 'message': f"Community Cards Revealed: {event_notice['cards']}"}, to=room_id)
         elif event_notice['type'] == 'hand_ended':
-            socketio.emit('notification', {'title': 'Hand Completed', 'message': event_notice['summary']}, to=room_id)
+            # Broadcast hand result modal to ALL connected clients in the room
+            socketio.emit('hand_result_popup', {
+                'title': 'Hand Completed',
+                'summary': event_notice['summary'],
+                'hand_data': event_notice.get('hand_data')
+            }, to=room_id)
 
 def broadcast_room_state(room_id):
     if room_id not in rooms:
@@ -301,6 +306,7 @@ def broadcast_room_state(room_id):
             'winning_cards': getattr(room, 'winning_cards', []),
             'current_turn_sid': active_turn_sid,
             'players': players_data,
+            'last_hand_data': room.last_hand_data,
             'last_hand_summary': room.last_hand_summary,
             'pending_joins': getattr(room, 'pending_joins', []),
             'pending_add_cash': getattr(room, 'pending_add_cash', []),
