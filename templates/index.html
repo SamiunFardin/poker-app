@@ -199,6 +199,21 @@
         .seat-name { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .seat-chips { color: #2ecc71; font-weight: 700; margin-top: 2px; }
 
+        .timer-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .timer-progress {
+            height: 100%;
+            background: var(--accent-gold-bright);
+            width: 100%;
+            transition: width 0.2s linear;
+        }
+
         .badge-tag {
             font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px;
         }
@@ -228,6 +243,8 @@
             display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; max-width: 400px; margin: 10px auto;
         }
 
+        .auto-actions { display: flex; justify-content: center; gap: 15px; font-size: 12px; color: #aaa; margin-bottom: 10px; }
+
         .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left; }
         .ledger-table th, .ledger-table td { padding: 8px 10px; border: 1px solid #262a36; }
         .ledger-table th { background: #0d0f12; color: var(--accent-gold-bright); }
@@ -256,6 +273,14 @@
                 <input type="text" id="host-room-id" placeholder="Room Code (e.g. POKER1)">
                 <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
                 
+                <label style="font-size: 13px; color: #aaa;">Turn Timer (Seconds):</label>
+                <select id="turn-time-select">
+                    <option value="15">15 Seconds</option>
+                    <option value="30" selected>30 Seconds</option>
+                    <option value="45">45 Seconds</option>
+                    <option value="60">60 Seconds</option>
+                </select>
+
                 <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
                 <div class="avatar-picker" id="host-avatar-picker">
                     <span class="avatar-opt selected" data-avatar="👑">👑</span>
@@ -338,6 +363,11 @@
 
         <!-- PLAYER ACTION CONTROLS -->
         <div id="player-action-panel" class="action-panel">
+            <div class="auto-actions">
+                <label><input type="checkbox" id="auto-check-fold"> Auto Check/Fold</label>
+                <label><input type="checkbox" id="auto-call"> Auto Call Any</label>
+            </div>
+
             <div class="quick-bets">
                 <button onclick="setRaisePreset('min')">Min</button>
                 <button onclick="setRaisePreset('2.5x')">2.5x</button>
@@ -383,6 +413,7 @@
     let selectedJoinAvatar = '😎';
     let lastHandSummaryText = "No hands played yet.";
     let latestGameState = null;
+    let timerInterval = null;
 
     function createUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -457,6 +488,7 @@
         const hostName = document.getElementById('host-name').value.trim();
         const isPlaying = document.getElementById('host-is-playing').checked;
         const hostBuyin = parseFloat(document.getElementById('host-buyin').value) || 1000;
+        const turnTime = parseInt(document.getElementById('turn-time-select').value) || 30;
 
         if (!roomId) return alert('Enter room code');
         currentRoom = roomId;
@@ -467,6 +499,7 @@
             avatar: selectedHostAvatar,
             host_is_playing: isPlaying,
             host_buyin: hostBuyin,
+            turn_time: turnTime,
             session_id: sessionId
         });
     });
@@ -708,6 +741,8 @@
         let myChips = 1000;
         let amIPlaying = false;
 
+        if (timerInterval) clearInterval(timerInterval);
+
         state.players.forEach((p, idx) => {
             const isMe = (p.sid === socket.id);
             if (isMe) {
@@ -746,11 +781,36 @@
                     <div class="seat-name">${p.name} ${badges}</div>
                     <div class="seat-chips">$${p.chips.toFixed(0)}</div>
                     <div style="font-size:10px; color:#aaa;">Bet: $${p.current_bet.toFixed(0)}</div>
+                    ${isTurn && state.in_progress ? `<div class="timer-bar"><div class="timer-progress" id="timer-prog-${p.sid}"></div></div>` : ''}
                     ${cardsHtml ? `<div style="display:flex; justify-content:center; gap:2px; margin-top:4px;">${cardsHtml}</div>` : ''}
                     ${kickBtnHtml}
                 </div>
             `;
         });
+
+        // Run turn timer progress bar
+        if (state.in_progress && state.current_turn_sid && state.turn_start_time) {
+            const timeLimit = state.turn_time || 30;
+            const myTurnNow = (socket.id === state.current_turn_sid);
+
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() / 1000) - state.turn_start_time;
+                const remaining = Math.max(0, timeLimit - elapsed);
+                const pct = (remaining / timeLimit) * 100;
+                
+                const progEl = document.getElementById(`timer-prog-${state.current_turn_sid}`);
+                if (progEl) progEl.style.width = pct + '%';
+
+                if (remaining <= 0 && myTurnNow) {
+                    clearInterval(timerInterval);
+                    if (document.getElementById('auto-check-fold').checked || myCurrentBet < state.highest_bet) {
+                        sendAction('fold');
+                    } else {
+                        sendAction('check');
+                    }
+                }
+            }, 200);
+        }
 
         document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
 
@@ -765,6 +825,18 @@
 
         if (amIPlaying) {
             const myTurn = (socket.id === state.current_turn_sid);
+            
+            // Auto Actions Trigger
+            if (myTurn) {
+                if (document.getElementById('auto-check-fold').checked) {
+                    if (callNeeded === 0) sendAction('check');
+                    else sendAction('fold');
+                } else if (document.getElementById('auto-call').checked) {
+                    if (callNeeded === 0) sendAction('check');
+                    else sendAction('call');
+                }
+            }
+
             document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
                 el.disabled = !myTurn;
             });
