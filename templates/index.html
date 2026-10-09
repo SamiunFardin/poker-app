@@ -65,15 +65,23 @@
             border: none;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.1s ease, filter 0.2s ease;
+            transition: transform 0.1s ease, filter 0.2s ease, opacity 0.2s ease;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
         }
-        button:hover { filter: brightness(1.15); }
-        button:active { transform: scale(0.97); }
-        button:disabled { background: #333 !important; color: #777; cursor: not-allowed; opacity: 0.5; filter: none; }
+        button:hover:not(:disabled) { filter: brightness(1.15); }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:disabled {
+            background: #2a2e39 !important;
+            color: #555c6e !important;
+            cursor: not-allowed !important;
+            opacity: 0.4 !important;
+            filter: grayscale(1) !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+        }
 
         .btn-green { background: var(--btn-green); color: #fff; }
         .btn-red { background: var(--btn-red); color: #fff; }
@@ -83,10 +91,10 @@
         .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
 
-        .avatar-picker { display: flex; gap: 10px; margin: 8px 0; }
+        .avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
         .avatar-opt {
-            font-size: 22px;
-            padding: 6px 10px;
+            font-size: 20px;
+            padding: 6px 9px;
             background: #090a0d;
             border: 2px solid transparent;
             border-radius: 8px;
@@ -94,7 +102,6 @@
         }
         .avatar-opt.selected { border-color: var(--accent-gold); background: #222; }
 
-        /* Poker Table */
         .poker-table-container {
             position: relative;
             width: 100%;
@@ -135,7 +142,6 @@
 
         .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
 
-        /* Cards & Flip Animation */
         .card-graphic {
             width: var(--card-w);
             height: var(--card-h);
@@ -170,7 +176,6 @@
             border: 2px solid #fff;
         }
 
-        /* Player Pods / Seats */
         .seat {
             position: absolute;
             width: 125px;
@@ -228,7 +233,6 @@
         .seat-4 { top: 50px; right: 1%; }
         .seat-5 { bottom: 50px; right: 1%; }
 
-        /* Action Panel & Sliders */
         .action-panel {
             background: var(--panel-bg);
             padding: 15px;
@@ -254,9 +258,14 @@
             background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-box {
-            background: var(--panel-bg); padding: 22px; border-radius: 14px; max-width: 550px; width: 92%; text-align: center; border: 2px solid var(--accent-gold);
+            background: var(--panel-bg); padding: 22px; border-radius: 14px; max-width: 580px; width: 92%; max-height: 90vh; overflow-y: auto; text-align: center; border: 2px solid var(--accent-gold);
         }
         #qrcode-canvas { margin: 15px auto; background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
+
+        .copy-link-box {
+            display: flex; gap: 8px; margin-top: 10px;
+        }
+        .copy-link-box input { margin: 0; text-align: center; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -273,12 +282,15 @@
                 <input type="text" id="host-room-id" placeholder="Room Code (e.g. POKER1)">
                 <input type="text" id="host-name" placeholder="Admin Name" value="Host Admin">
                 
-                <label style="font-size: 13px; color: #aaa;">Turn Timer (Seconds):</label>
+                <label style="font-size: 13px; color: #aaa;">Turn Timer:</label>
                 <select id="turn-time-select">
                     <option value="15">15 Seconds</option>
                     <option value="30" selected>30 Seconds</option>
                     <option value="45">45 Seconds</option>
-                    <option value="60">60 Seconds</option>
+                    <option value="60">1 Minute</option>
+                    <option value="120">2 Minutes</option>
+                    <option value="300">5 Minutes</option>
+                    <option value="600">10 Minutes</option>
                 </select>
 
                 <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
@@ -287,6 +299,14 @@
                     <span class="avatar-opt" data-avatar="😎">😎</span>
                     <span class="avatar-opt" data-avatar="🎩">🎩</span>
                     <span class="avatar-opt" data-avatar="🔥">🔥</span>
+                    <span class="avatar-opt" data-avatar="🎲">🎲</span>
+                    <span class="avatar-opt" data-avatar="🦁">🦁</span>
+                    <span class="avatar-opt" data-avatar="🤖">🤖</span>
+                    <span class="avatar-opt" data-avatar="🎭">🎭</span>
+                    <span class="avatar-opt" data-avatar="🦊">🦊</span>
+                    <span class="avatar-opt" data-avatar="🐉">🐉</span>
+                    <span class="avatar-opt" data-avatar="👽">👽</span>
+                    <span class="avatar-opt" data-avatar="🥷">🥷</span>
                 </div>
 
                 <div style="margin: 10px 0;">
@@ -312,6 +332,14 @@
                     <span class="avatar-opt" data-avatar="🎲">🎲</span>
                     <span class="avatar-opt" data-avatar="🦁">🦁</span>
                     <span class="avatar-opt" data-avatar="🤖">🤖</span>
+                    <span class="avatar-opt" data-avatar="👑">👑</span>
+                    <span class="avatar-opt" data-avatar="🎩">🎩</span>
+                    <span class="avatar-opt" data-avatar="🔥">🔥</span>
+                    <span class="avatar-opt" data-avatar="🎭">🎭</span>
+                    <span class="avatar-opt" data-avatar="🦊">🦊</span>
+                    <span class="avatar-opt" data-avatar="🐉">🐉</span>
+                    <span class="avatar-opt" data-avatar="👽">👽</span>
+                    <span class="avatar-opt" data-avatar="🥷">🥷</span>
                 </div>
 
                 <button id="btn-join-room" class="btn-green" style="width: 100%; margin-top: 10px;">Join Table</button>
@@ -324,7 +352,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">Room Code: <span id="display-room-id" style="color: var(--accent-gold-bright);"></span></h2>
             <div>
-                <button id="btn-show-qr" class="btn-blue hidden">QR Code</button>
+                <button id="btn-show-qr" class="btn-blue hidden">QR Code & Link</button>
                 <button id="btn-add-cash-req" class="btn-green hidden">Request Cash</button>
                 <button id="btn-view-last-hand">Last Hand</button>
                 <button id="btn-exit-game" class="btn-red">Exit Game</button>
@@ -342,7 +370,6 @@
                 <div id="pending-requests-list"></div>
             </div>
 
-            <!-- HOST LIVE PLAYER LEDGER -->
             <div style="margin-top: 15px;">
                 <h4 style="margin: 5px 0; color: var(--accent-gold-bright);">Players Account Details (Ledger)</h4>
                 <div id="host-ledger-container" style="overflow-x: auto;"></div>
@@ -369,11 +396,11 @@
             </div>
 
             <div class="quick-bets">
-                <button onclick="setRaisePreset('min')">Min</button>
-                <button onclick="setRaisePreset('2.5x')">2.5x</button>
-                <button onclick="setRaisePreset('half_pot')">1/2 Pot</button>
-                <button onclick="setRaisePreset('pot')">Pot</button>
-                <button onclick="setRaisePreset('allin')">All In</button>
+                <button id="qb-min" onclick="setRaisePreset('min')">Min</button>
+                <button id="qb-25x" onclick="setRaisePreset('2.5x')">2.5x</button>
+                <button id="qb-half" onclick="setRaisePreset('half_pot')">1/2 Pot</button>
+                <button id="qb-pot" onclick="setRaisePreset('pot')">Pot</button>
+                <button id="qb-allin" onclick="setRaisePreset('allin')">All In</button>
             </div>
 
             <div class="raise-slider-container">
@@ -412,6 +439,7 @@
     let selectedHostAvatar = '👑';
     let selectedJoinAvatar = '😎';
     let lastHandSummaryText = "No hands played yet.";
+    let lastHandDataObj = null;
     let latestGameState = null;
     let timerInterval = null;
 
@@ -522,16 +550,28 @@
 
     document.getElementById('btn-show-qr').addEventListener('click', () => {
         const joinUrl = window.location.origin + '?room=' + currentRoom;
-        showModal('Scan to Join Room', `
-            <p>Players can scan this QR code to open the game:</p>
+        showModal('Scan or Share Game Link', `
+            <p style="margin:5px 0; color:#aaa;">Players can scan this QR code or copy the link below:</p>
             <div id="qrcode-canvas"></div>
-            <p style="font-weight:bold; color:var(--accent-gold-bright);">${currentRoom}</p>
+            <div class="copy-link-box">
+                <input type="text" id="share-link-input" value="${joinUrl}" readonly>
+                <button class="btn-gold" onclick="copyGameLink()">Copy Link</button>
+            </div>
         `);
         setTimeout(() => {
             document.getElementById('qrcode-canvas').innerHTML = '';
             new QRCode(document.getElementById('qrcode-canvas'), { text: joinUrl, width: 160, height: 160 });
         }, 100);
     });
+
+    function copyGameLink() {
+        const input = document.getElementById('share-link-input');
+        if (input) {
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("Game link copied to clipboard!");
+        }
+    }
 
     document.getElementById('btn-start-hand').addEventListener('click', () => socket.emit('start_hand', { room_id: currentRoom }));
 
@@ -559,15 +599,55 @@
     });
 
     document.getElementById('btn-view-last-hand').addEventListener('click', () => {
-        showModal('Last Hand History', `<pre style="text-align:left; white-space:pre-wrap;">${lastHandSummaryText}</pre>`);
+        renderLastHandModal();
     });
 
-    document.getElementById('btn-check').addEventListener('click', () => sendAction('check'));
-    document.getElementById('btn-call').addEventListener('click', () => sendAction('call'));
-    document.getElementById('btn-fold').addEventListener('click', () => sendAction('fold'));
+    function renderLastHandModal() {
+        if (!lastHandDataObj) {
+            showModal('Last Hand History', `<p style="color:#aaa;">${lastHandSummaryText}</p>`);
+            return;
+        }
+
+        let ccHtml = (lastHandDataObj.community_cards || []).map(c => renderCardGraphic(c)).join('');
+        let playersHtml = (lastHandDataObj.players_show || []).map(p => {
+            let cards = (p.hole_cards || []).map(c => renderCardGraphic(c)).join('');
+            return `
+                <div style="background:#1a1d26; padding:8px; border-radius:8px; margin:6px 0; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>${p.avatar || '😎'} ${p.name}</strong>
+                        <div style="font-size:11px; color:var(--accent-gold);">${p.eval}</div>
+                    </div>
+                    <div style="display:flex; gap:3px;">${cards}</div>
+                </div>
+            `;
+        }).join('');
+
+        showModal('Last Hand Complete Breakdown', `
+            <div style="margin-bottom:12px;">
+                <h4 style="margin:5px 0; color:var(--accent-gold-bright);">Community Board</h4>
+                <div style="display:flex; justify-content:center; gap:4px;">${ccHtml || 'None'}</div>
+            </div>
+            <div style="text-align:left;">
+                <h4 style="margin:5px 0; color:#fff;">Players & Evaluations</h4>
+                ${playersHtml}
+            </div>
+        `);
+    }
+
+    document.getElementById('btn-check').addEventListener('click', () => {
+        if (!document.getElementById('btn-check').disabled) sendAction('check');
+    });
+    document.getElementById('btn-call').addEventListener('click', () => {
+        if (!document.getElementById('btn-call').disabled) sendAction('call');
+    });
+    document.getElementById('btn-fold').addEventListener('click', () => {
+        if (!document.getElementById('btn-fold').disabled) sendAction('fold');
+    });
     document.getElementById('btn-raise').addEventListener('click', () => {
-        const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
-        sendAction('raise', amt);
+        if (!document.getElementById('btn-raise').disabled) {
+            const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
+            sendAction('raise', amt);
+        }
     });
 
     function syncRaiseInput(val) {
@@ -635,6 +715,13 @@
 
     socket.on('notification', (data) => showModal(data.title, `<p>${data.message}</p>`));
 
+    // Show popup to ALL devices when a hand ends
+    socket.on('hand_result_popup', (data) => {
+        lastHandDataObj = data.hand_data;
+        lastHandSummaryText = data.summary;
+        renderLastHandModal();
+    });
+
     socket.on('room_closed', (data) => {
         localStorage.removeItem('poker_room_id');
         let ledgerHtml = renderLedgerTable(data.ledger);
@@ -680,7 +767,9 @@
 
     socket.on('game_state', (state) => {
         latestGameState = state;
+        if (state.last_hand_data) lastHandDataObj = state.last_hand_data;
         lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
+
         document.getElementById('pot-amount').innerText = state.pot.toFixed(0);
         document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(0);
         document.getElementById('street-name').innerText = state.street;
@@ -814,18 +903,52 @@
 
         document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
 
-        const minRaise = state.highest_bet + state.bb;
-        const maxRaise = myChips + myCurrentBet;
-        const slider = document.getElementById('raise-slider');
-        slider.min = minRaise;
-        slider.max = maxRaise;
-
         const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
         document.getElementById('call-amount-label').innerText = callNeeded.toFixed(0);
 
         if (amIPlaying) {
-            const myTurn = (socket.id === state.current_turn_sid);
+            const myTurn = (socket.id === state.current_turn_sid) && state.in_progress;
             
+            // SMART ACTION BUTTON STATES (Grey out & disable invalid actions)
+            const btnCheck = document.getElementById('btn-check');
+            const btnCall = document.getElementById('btn-call');
+            const btnFold = document.getElementById('btn-fold');
+            const btnRaise = document.getElementById('btn-raise');
+            
+            const qbMin = document.getElementById('qb-min');
+            const qb25 = document.getElementById('qb-25x');
+            const qbHalf = document.getElementById('qb-half');
+            const qbPot = document.getElementById('qb-pot');
+            const qbAllin = document.getElementById('qb-allin');
+
+            // Can check ONLY if no call is needed
+            const canCheck = myTurn && (callNeeded === 0);
+            btnCheck.disabled = !canCheck;
+
+            // Can call ONLY if a call is actually needed and player has chips
+            const canCall = myTurn && (callNeeded > 0) && (myChips > 0);
+            btnCall.disabled = !canCall;
+
+            // Fold is allowed whenever it's turn and hand in progress
+            btnFold.disabled = !myTurn;
+
+            // Min raise requirement
+            const minRaiseTarget = state.highest_bet + state.bb;
+            const neededForMinRaise = minRaiseTarget - myCurrentBet;
+            const canRaise = myTurn && (myChips >= neededForMinRaise);
+
+            btnRaise.disabled = !canRaise;
+            qbMin.disabled = !canRaise;
+            qb25.disabled = !canRaise;
+            qbHalf.disabled = !canRaise;
+            qbPot.disabled = !canRaise;
+            qbAllin.disabled = !myTurn || (myChips <= 0);
+
+            // Update Slider Bounds
+            const slider = document.getElementById('raise-slider');
+            slider.min = minRaiseTarget;
+            slider.max = myChips + myCurrentBet;
+
             // Auto Actions Trigger
             if (myTurn) {
                 if (document.getElementById('auto-check-fold').checked) {
@@ -836,10 +959,6 @@
                     else sendAction('call');
                 }
             }
-
-            document.querySelectorAll('#player-action-panel button, #player-action-panel input').forEach(el => {
-                el.disabled = !myTurn;
-            });
         }
     });
 
