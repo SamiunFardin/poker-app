@@ -1,4 +1,5 @@
 import random
+import time
 from treys import Card, Evaluator
 
 evaluator = Evaluator()
@@ -37,13 +38,14 @@ class Player:
         return self.chips - total_in
 
 class GameRoom:
-    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20, host_is_playing=False, host_name="Host Admin", host_buyin=1000, host_avatar="👑"):
+    def __init__(self, room_id, host_sid, host_session_id, sb=10, bb=20, turn_time=30, host_is_playing=False, host_name="Host Admin", host_buyin=1000, host_avatar="👑"):
         self.room_id = room_id
         self.host_sid = host_sid
         self.host_session_id = host_session_id
         self.host_is_playing = host_is_playing
         self.sb = float(sb)
         self.bb = float(bb)
+        self.turn_time = int(turn_time)  # Turn limit in seconds
         
         self.players = {}             # sid -> Player
         self.player_order = []        # list of sids
@@ -58,6 +60,7 @@ class GameRoom:
         self.street = 'PREFLOP'
         self.community_cards = []
         self.current_turn_idx = 0
+        self.turn_start_time = None
         self.dealer_idx = 0
         self.dealer_sid = None
         self.sb_sid = None
@@ -199,6 +202,7 @@ class GameRoom:
 
         self.current_turn_idx = (bb_idx + 1) % n
         self.ensure_active_turn()
+        self.turn_start_time = time.time()
         return True, "Hand started successfully."
 
     def ensure_active_turn(self):
@@ -213,6 +217,7 @@ class GameRoom:
                 break
             self.current_turn_idx = (self.current_turn_idx + 1) % n
             attempts += 1
+        self.turn_start_time = time.time()
 
     def discontinue_hand(self, reason="Hand discontinued by Host."):
         if not self.in_progress:
