@@ -24,6 +24,7 @@ def handle_create_room(data):
     host_buyin = float(data.get('host_buyin', 1000.0))
     sb = float(data.get('sb', 10))
     bb = float(data.get('bb', 20))
+    turn_time = int(data.get('turn_time', 30))
     session_id = data.get('session_id') or str(uuid.uuid4())
 
     if not room_id:
@@ -34,7 +35,7 @@ def handle_create_room(data):
         emit('error', {'message': f'Room code "{room_id}" already exists.'})
         return
 
-    room = GameRoom(room_id, request.sid, session_id, sb, bb, host_is_playing, host_name, host_buyin, host_avatar)
+    room = GameRoom(room_id, request.sid, session_id, sb, bb, turn_time, host_is_playing, host_name, host_buyin, host_avatar)
     rooms[room_id] = room
 
     join_room(room_id)
@@ -294,6 +295,8 @@ def broadcast_room_state(room_id):
             'highest_bet': room.highest_bet,
             'sb': room.sb,
             'bb': room.bb,
+            'turn_time': room.turn_time,
+            'turn_start_time': room.turn_start_time,
             'community_cards': [c.to_dict() for c in room.community_cards] if hasattr(room, 'community_cards') else [],
             'winning_cards': getattr(room, 'winning_cards', []),
             'current_turn_sid': active_turn_sid,
