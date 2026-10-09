@@ -45,7 +45,7 @@ class GameRoom:
         self.host_is_playing = host_is_playing
         self.sb = float(sb)
         self.bb = float(bb)
-        self.turn_time = int(turn_time)  # Turn limit in seconds
+        self.turn_time = int(turn_time)  # Up to 600s (10 mins)
         
         self.players = {}             # sid -> Player
         self.player_order = []        # list of sids
@@ -67,6 +67,7 @@ class GameRoom:
         self.bb_sid = None
         self.winning_cards = []
         self.deck = []
+        self.last_hand_data = None
         self.last_hand_summary = "No hands played yet."
 
         if self.host_is_playing:
@@ -202,7 +203,6 @@ class GameRoom:
 
         self.current_turn_idx = (bb_idx + 1) % n
         self.ensure_active_turn()
-        self.turn_start_time = time.time()
         return True, "Hand started successfully."
 
     def ensure_active_turn(self):
@@ -277,9 +277,22 @@ class GameRoom:
             winner = active_unfolded[0]
             winner.chips += self.pot
             summary = f"🏆 Winner: {winner.name}\n💰 Amount Won: ${self.pot:.2f}\nReason: All other players folded."
+            
+            self.last_hand_data = {
+                'winner': winner.name,
+                'pot': self.pot,
+                'community_cards': [c.to_dict() for c in self.community_cards],
+                'players_show': [{
+                    'name': p.name,
+                    'avatar': p.avatar,
+                    'folded': p.folded,
+                    'hole_cards': [c.to_dict() for c in p.hole_cards],
+                    'eval': 'Folded' if p.folded else 'Winner (Uncontested)'
+                } for p in self.players.values()]
+            }
             self.last_hand_summary = summary
             self.in_progress = False
-            return True, "Hand ended by fold.", {'type': 'hand_ended', 'summary': summary}
+            return True, "Hand ended by fold.", {'type': 'hand_ended', 'summary': summary, 'hand_data': self.last_hand_data}
 
         event_notice = self.advance_turn()
         return True, "Action processed.", event_notice
@@ -325,8 +338,8 @@ class GameRoom:
             event_notice = {'type': 'community_cards', 'title': 'River Revealed!', 'cards': card_str}
         elif self.street == 'RIVER':
             self.street = 'SHOWDOWN'
-            summary = self.evaluate_showdown()
-            return {'type': 'hand_ended', 'summary': summary}
+            summary, hand_data = self.evaluate_showdown()
+            return {'type': 'hand_ended', 'summary': summary, 'hand_data': hand_data}
 
         self.current_turn_idx = (self.dealer_idx + 1) % len(self.player_order)
         self.ensure_active_turn()
@@ -339,19 +352,38 @@ class GameRoom:
         if not active_players:
             summary = "Hand ended with no active players."
             self.last_hand_summary = summary
-            return summary
+            return summary, None
 
         board_treys = [Card.new(c.to_treys_str()) for c in self.community_cards]
         best_score = 99999
         winners = []
         summary_lines = []
+        player_eval_list = []
 
-        for p in active_players:
+        for p in self.players.values():
+            if p.folded:
+                player_eval_list.append({
+                    'name': p.name,
+                    'avatar': p.avatar,
+                    'folded': True,
+                    'hole_cards': [c.to_dict() for c in p.hole_cards],
+                    'eval': 'Folded'
+                })
+                continue
+
             hand_treys = [Card.new(c.to_treys_str()) for c in p.hole_cards]
             score = evaluator.evaluate(board_treys, hand_treys)
             rank_class = evaluator.get_rank_class(score)
             class_str = evaluator.class_to_string(rank_class)
             summary_lines.append(f"• {p.name}: {class_str}")
+
+            player_eval_list.append({
+                'name': p.name,
+                'avatar': p.avatar,
+                'folded': False,
+                'hole_cards': [c.to_dict() for c in p.hole_cards],
+                'eval': class_str
+            })
 
             if score < best_score:
                 best_score = score
@@ -370,5 +402,12 @@ class GameRoom:
                 self.winning_cards.append(c.to_dict())
 
         final_summary = f"🏆 WINNER: {winner_names}\n💰 POT WON: ${self.pot:.2f}\n\nEVALUATION:\n" + "\n".join(summary_lines)
+        
+        self.last_hand_data = {
+            'winner': winner_names,
+            'pot': self.pot,
+            'community_cards': [c.to_dict() for c in self.community_cards],
+            'players_show': player_eval_list
+        }
         self.last_hand_summary = final_summary
-        return final_summary
+        return final_summary, self.last_hand_data
