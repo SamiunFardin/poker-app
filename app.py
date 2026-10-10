@@ -244,6 +244,10 @@ def handle_player_action(data):
         emit('error', {'message': msg})
         return
 
+    # Trigger flying chip animation event if bet/raise/call occurred
+    if action in ['call', 'raise']:
+        socketio.emit('animate_flying_chips', {'sid': request.sid}, to=room_id)
+
     broadcast_room_state(room_id)
 
     if event_notice:
