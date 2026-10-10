@@ -45,11 +45,11 @@ class GameRoom:
         self.host_is_playing = host_is_playing
         self.sb = float(sb)
         self.bb = float(bb)
-        self.turn_time = int(turn_time)  # Up to 600s (10 mins)
+        self.turn_time = int(turn_time)
         
-        self.players = {}             # sid -> Player
-        self.player_order = []        # list of sids
-        self.session_map = {}         # session_id -> Player
+        self.players = {}
+        self.player_order = []
+        self.session_map = {}
         self.pending_joins = []
         self.pending_add_cash = []
         self.left_players_history = []
