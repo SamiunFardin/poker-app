@@ -93,11 +93,7 @@
         .btn-blue { background: var(--btn-blue); color: #fff; box-shadow: 0 4px 14px rgba(41, 128, 185, 0.4); }
         .btn-gold { background: var(--accent-gold); color: #000; box-shadow: 0 4px 14px rgba(243, 156, 18, 0.4); }
 
-        /* Lounge Hero Header */
-        .lounge-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+        .lounge-header { text-align: center; margin-bottom: 25px; }
         .lounge-header h1 {
             font-size: 36px;
             background: linear-gradient(135deg, #f1c40f, #e67e22);
@@ -106,113 +102,53 @@
             margin: 0 0 8px 0;
             text-shadow: 0 4px 20px rgba(243,156,18,0.3);
         }
-        .lounge-header p {
-            color: #95a5a6;
-            font-size: 14px;
-            margin: 0;
-        }
+        .lounge-header p { color: #95a5a6; font-size: 14px; margin: 0; }
 
         .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
 
         .avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
         .avatar-opt {
-            font-size: 22px;
-            padding: 6px 10px;
-            background: #0d0f14;
-            border: 2px solid transparent;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
+            font-size: 22px; padding: 6px 10px; background: #0d0f14; border: 2px solid transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
         }
         .avatar-opt.selected { border-color: var(--accent-gold); background: #222a36; transform: scale(1.08); }
 
-        /* Poker Table */
         .poker-table-container {
-            position: relative;
-            width: 100%;
-            height: 500px;
-            margin: 15px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: relative; width: 100%; height: 500px; margin: 15px 0; display: flex; justify-content: center; align-items: center;
         }
 
         .poker-table {
-            position: relative;
-            width: 86%;
-            height: 340px;
-            background: var(--felt-gradient);
-            border: 14px solid var(--rim-color);
-            outline: 3px solid var(--rim-border);
-            border-radius: 190px;
-            box-shadow: inset 0 0 60px rgba(0,0,0,0.9), 0 16px 45px rgba(0,0,0,0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            position: relative; width: 86%; height: 340px; background: var(--felt-gradient); border: 14px solid var(--rim-color); outline: 3px solid var(--rim-border); border-radius: 190px; box-shadow: inset 0 0 60px rgba(0,0,0,0.9), 0 16px 45px rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         .pot-badge {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--accent-gold-bright);
-            background: rgba(10, 12, 16, 0.88);
-            padding: 8px 22px;
-            border-radius: 24px;
-            border: 1px solid var(--accent-gold);
-            margin-bottom: 12px;
-            text-align: center;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.7);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
+            font-size: 16px; font-weight: 800; color: var(--accent-gold-bright); background: rgba(10, 12, 16, 0.88); padding: 8px 22px; border-radius: 24px; border: 1px solid var(--accent-gold); margin-bottom: 12px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; gap: 4px;
         }
 
-        /* Animated Chip Stack Icons in Pot */
-        .pot-chips-graphic {
-            display: flex;
-            gap: 4px;
-            justify-content: center;
-            margin-top: 2px;
-            animation: chipStackFloat 2s ease-in-out infinite alternate;
-        }
-        @keyframes chipStackFloat {
-            from { transform: translateY(0px); }
-            to { transform: translateY(-3px); }
-        }
-        .mini-chip {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px dashed #fff;
-            display: inline-block;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
+        .pot-chips-graphic { display: flex; gap: 4px; justify-content: center; margin-top: 2px; }
+        .mini-chip { width: 14px; height: 14px; border-radius: 50%; border: 2px dashed #fff; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .mini-chip.red { background: #e74c3c; }
         .mini-chip.gold { background: #f39c12; }
         .mini-chip.blue { background: #2980b9; }
 
+        /* Flying Animated Chips */
+        .flying-chip {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #f1c40f;
+            border-radius: 50%;
+            border: 3px dashed #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+            z-index: 100;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
         .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
 
         .card-graphic {
-            width: var(--card-w);
-            height: var(--card-h);
-            background: #ffffff;
-            border-radius: 6px;
-            display: inline-flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 4px;
-            box-sizing: border-box;
-            color: #111;
-            font-weight: bold;
-            font-size: 12px;
-            user-select: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-            perspective: 1000px;
-            animation: cardFlip 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: var(--card-w); height: var(--card-h); background: #ffffff; border-radius: 6px; display: inline-flex; flex-direction: column; justify-content: space-between; padding: 4px; box-sizing: border-box; color: #111; font-weight: bold; font-size: 12px; user-select: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); perspective: 1000px; animation: cardFlip 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes cardFlip {
             from { transform: rotateY(90deg) scale(0.8); opacity: 0; }
@@ -220,63 +156,25 @@
         }
         .card-graphic.red { color: #e74c3c; }
         .card-graphic.black { color: #2c3e50; }
-        .card-graphic.winning-highlight {
-            border: 2px solid var(--accent-gold-bright);
-            box-shadow: 0 0 18px var(--accent-gold-bright);
-            transform: scale(1.08);
-        }
-        .card-back {
-            background: repeating-linear-gradient(135deg, #2980b9, #2980b9 8px, #3498db 8px, #3498db 16px);
-            border: 2px solid #fff;
-        }
+        .card-graphic.winning-highlight { border: 2px solid var(--accent-gold-bright); box-shadow: 0 0 18px var(--accent-gold-bright); transform: scale(1.08); }
+        .card-back { background: repeating-linear-gradient(135deg, #2980b9, #2980b9 8px, #3498db 8px, #3498db 16px); border: 2px solid #fff; }
 
         .seat {
-            position: absolute;
-            width: 130px;
-            background: rgba(18, 22, 30, 0.96);
-            border: 2px solid #363c4e;
-            border-radius: 14px;
-            padding: 9px;
-            text-align: center;
-            font-size: 12px;
-            z-index: 5;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+            position: absolute; width: 130px; background: rgba(18, 22, 30, 0.96); border: 2px solid #363c4e; border-radius: 14px; padding: 9px; text-align: center; font-size: 12px; z-index: 5; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(0,0,0,0.5);
         }
         .seat.is-me { border-color: var(--accent-gold-bright); background: rgba(35, 30, 16, 0.96); z-index: 10; }
-        .seat.active-turn {
-            box-shadow: 0 0 24px var(--accent-gold-bright);
-            border-color: var(--accent-gold-bright);
-            animation: pulseTurn 1.2s infinite alternate;
-        }
-        @keyframes pulseTurn {
-            from { box-shadow: 0 0 10px var(--accent-gold-bright); }
-            to { box-shadow: 0 0 25px var(--accent-gold-bright); }
-        }
+        .seat.active-turn { box-shadow: 0 0 24px var(--accent-gold-bright); border-color: var(--accent-gold-bright); animation: pulseTurn 1.2s infinite alternate; }
+        @keyframes pulseTurn { from { box-shadow: 0 0 10px var(--accent-gold-bright); } to { box-shadow: 0 0 25px var(--accent-gold-bright); } }
         .seat.folded { opacity: 0.38; filter: grayscale(0.85); }
 
         .seat-avatar { font-size: 22px; display: block; margin-bottom: 2px; }
         .seat-name { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .seat-chips { color: #2ecc71; font-weight: 700; margin-top: 2px; }
 
-        .timer-bar {
-            width: 100%;
-            height: 4px;
-            background: #222;
-            border-radius: 2px;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-        .timer-progress {
-            height: 100%;
-            background: var(--accent-gold-bright);
-            width: 100%;
-            transition: width 0.2s linear;
-        }
+        .timer-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+        .timer-progress { height: 100%; background: var(--accent-gold-bright); width: 100%; transition: width 0.2s linear; }
 
-        .badge-tag {
-            font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px;
-        }
+        .badge-tag { font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px; }
         .badge-dealer { background: #f1c40f; color: #000; }
         .badge-sb { background: #e67e22; color: #fff; }
         .badge-bb { background: #e74c3c; color: #fff; }
@@ -288,20 +186,11 @@
         .seat-4 { top: 50px; right: 1%; }
         .seat-5 { bottom: 50px; right: 1%; }
 
-        .action-panel {
-            background: var(--panel-bg);
-            padding: 16px;
-            border-radius: 14px;
-            border: 1px solid var(--panel-border);
-            text-align: center;
-        }
+        .action-panel { background: var(--panel-bg); padding: 16px; border-radius: 14px; border: 1px solid var(--panel-border); text-align: center; }
         .quick-bets { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
         .quick-bets button { padding: 6px 12px; font-size: 12px; background: #222938; }
 
-        .raise-slider-container {
-            display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; max-width: 400px; margin: 10px auto;
-        }
-
+        .raise-slider-container { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; max-width: 400px; margin: 10px auto; }
         .auto-actions { display: flex; justify-content: center; gap: 16px; font-size: 12px; color: #aaa; margin-bottom: 10px; }
 
         .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left; }
@@ -309,16 +198,12 @@
         .ledger-table th { background: #0d0f14; color: var(--accent-gold-bright); }
 
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000;
-            backdrop-filter: blur(5px);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px);
         }
         .modal-box {
-            background: #141822; padding: 24px; border-radius: 18px; max-width: 580px; width: 92%; max-height: 90vh; overflow-y: auto; text-align: center; border: 2px solid var(--accent-gold);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+            background: #141822; padding: 24px; border-radius: 18px; max-width: 580px; width: 92%; max-height: 90vh; overflow-y: auto; text-align: center; border: 2px solid var(--accent-gold); box-shadow: 0 15px 40px rgba(0,0,0,0.9);
         }
         #qrcode-canvas { margin: 15px auto; background: #fff; padding: 10px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-
         .copy-link-box { display: flex; gap: 8px; margin-top: 10px; }
         .copy-link-box input { margin: 0; text-align: center; font-size: 12px; }
 
@@ -329,13 +214,11 @@
 </head>
 <body>
 
-<!-- Audio Mute Toggle -->
 <div class="audio-toggle-badge" onclick="toggleAudio()" id="audio-toggle-btn">
     🔊 <span>SFX: On</span>
 </div>
 
 <div class="container">
-    <!-- LOBBY / HOMEPAGE SECTION -->
     <div id="lobby-section" class="card-panel">
         <div class="lounge-header">
             <h1>♠ Texas Hold'em Lounge ♣</h1>
@@ -343,7 +226,6 @@
         </div>
         
         <div class="lobby-grid">
-            <!-- HOST CREATE CARD -->
             <div style="background: #0d0f14; padding: 18px; border-radius: 12px; border: 1px solid #262a36;">
                 <h3 style="color: var(--accent-gold); margin-top: 0; display:flex; align-items:center; gap:8px;">🎲 Host Private Table</h3>
                 <input type="text" id="host-room-id" placeholder="Room Code (e.g. VIPCLUB)">
@@ -386,7 +268,6 @@
                 <button id="btn-create-room" class="btn-gold" style="width: 100%; margin-top: 12px;">Launch Room</button>
             </div>
 
-            <!-- PLAYER JOIN CARD -->
             <div style="background: #0d0f14; padding: 18px; border-radius: 12px; border: 1px solid #262a36;">
                 <h3 style="color: var(--btn-green); margin-top: 0; display:flex; align-items:center; gap:8px;">♠ Join Active Table</h3>
                 <input type="text" id="join-room-id" placeholder="Enter Room Code">
@@ -414,7 +295,6 @@
         </div>
     </div>
 
-    <!-- GAME SECTION -->
     <div id="game-section" class="card-panel hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">Room: <span id="display-room-id" style="color: var(--accent-gold-bright);"></span></h2>
@@ -426,7 +306,6 @@
             </div>
         </div>
 
-        <!-- HOST CONTROL PANEL -->
         <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #0d0f14; margin-top: 15px;">
             <h3 style="color: var(--accent-gold-bright); margin-top: 0;">Host Table Management</h3>
             <button id="btn-start-hand" class="btn-green">Start Next Hand</button>
@@ -443,10 +322,9 @@
             </div>
         </div>
 
-        <!-- POKER TABLE -->
         <div class="poker-table-container">
-            <div class="poker-table">
-                <div class="pot-badge">
+            <div class="poker-table" id="poker-table-board">
+                <div class="pot-badge" id="pot-badge-el">
                     <div>Total Pot: $<span id="pot-amount">0</span></div>
                     <div class="pot-chips-graphic">
                         <span class="mini-chip red"></span>
@@ -460,7 +338,6 @@
             <div id="seats-container"></div>
         </div>
 
-        <!-- PLAYER ACTION CONTROLS -->
         <div id="player-action-panel" class="action-panel">
             <div class="auto-actions">
                 <label><input type="checkbox" id="auto-check-fold"> Auto Check/Fold</label>
@@ -491,7 +368,6 @@
     </div>
 </div>
 
-<!-- MODAL POPUP -->
 <div id="popup-modal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2 id="modal-title" style="color: var(--accent-gold-bright); margin-top:0;">Notification</h2>
@@ -516,7 +392,6 @@
     let timerInterval = null;
     let audioEnabled = true;
 
-    // Web Audio API Synthesizer Sound Effects
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSFX(type) {
@@ -527,11 +402,9 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         const now = audioCtx.currentTime;
 
         if (type === 'card') {
-            // Crisp card sliding swoosh (filtered noise/high pitch chirp)
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(400, now);
             osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
@@ -540,7 +413,6 @@
             osc.start(now);
             osc.stop(now + 0.08);
         } else if (type === 'chip') {
-            // Casino chip clink
             osc.type = 'sine';
             osc.frequency.setValueAtTime(1400, now);
             osc.frequency.exponentialRampToValueAtTime(2200, now + 0.05);
@@ -549,7 +421,6 @@
             osc.start(now);
             osc.stop(now + 0.05);
         } else if (type === 'check') {
-            // Table tap / wooden knock
             osc.type = 'square';
             osc.frequency.setValueAtTime(180, now);
             osc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
@@ -558,11 +429,10 @@
             osc.start(now);
             osc.stop(now + 0.06);
         } else if (type === 'win') {
-            // Victorious Chime / Rake
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(523.25, now); // C5
-            osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-            osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.08);
+            osc.frequency.setValueAtTime(783.99, now + 0.16);
             gain.gain.setValueAtTime(0.2, now);
             gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
             osc.start(now);
@@ -643,6 +513,39 @@
             </div>
         `;
     }
+
+    // Flying Chip Animation Function
+    function animateFlyingChips(sid) {
+        playSFX('chip');
+        const seatEl = document.getElementById(`seat-box-${sid}`);
+        const potEl = document.getElementById('pot-badge-el');
+        if (!seatEl || !potEl) return;
+
+        const seatRect = seatEl.getBoundingClientRect();
+        const potRect = potEl.getBoundingClientRect();
+
+        const chip = document.createElement('div');
+        chip.className = 'flying-chip';
+        document.body.appendChild(chip);
+
+        chip.style.left = (seatRect.left + seatRect.width / 2 - 12) + 'px';
+        chip.style.top = (seatRect.top + seatRect.height / 2 - 12) + 'px';
+
+        setTimeout(() => {
+            chip.style.left = (potRect.left + potRect.width / 2 - 12) + 'px';
+            chip.style.top = (potRect.top + potRect.height / 2 - 12) + 'px';
+            chip.style.transform = 'scale(1.2) rotate(360deg)';
+            chip.style.opacity = '0.3';
+        }, 30);
+
+        setTimeout(() => {
+            chip.remove();
+        }, 650);
+    }
+
+    socket.on('animate_flying_chips', (data) => {
+        animateFlyingChips(data.sid);
+    });
 
     document.getElementById('btn-create-room').addEventListener('click', () => {
         const roomId = document.getElementById('host-room-id').value.trim().toUpperCase();
@@ -784,7 +687,7 @@
     });
     document.getElementById('btn-call').addEventListener('click', () => {
         if (!document.getElementById('btn-call').disabled) {
-            playSFX('chip');
+            animateFlyingChips(socket.id);
             sendAction('call');
         }
     });
@@ -796,7 +699,7 @@
     });
     document.getElementById('btn-raise').addEventListener('click', () => {
         if (!document.getElementById('btn-raise').disabled) {
-            playSFX('chip');
+            animateFlyingChips(socket.id);
             const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
             sendAction('raise', amt);
         }
@@ -1018,7 +921,7 @@
                 : '';
 
             seatsContainer.innerHTML += `
-                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''} ${p.folded ? 'folded' : ''}">
+                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''} ${p.folded ? 'folded' : ''}" id="seat-box-${p.sid}">
                     <span class="seat-avatar">${p.avatar || '😎'}</span>
                     <div class="seat-name">${p.name} ${badges}</div>
                     <div class="seat-chips">$${p.chips.toFixed(0)}</div>
