@@ -250,7 +250,6 @@ def handle_player_action(data):
         if event_notice['type'] == 'community_cards':
             socketio.emit('notification', {'title': event_notice['title'], 'message': f"Community Cards Revealed: {event_notice['cards']}"}, to=room_id)
         elif event_notice['type'] == 'hand_ended':
-            # Broadcast hand result modal to ALL connected clients in the room
             socketio.emit('hand_result_popup', {
                 'title': 'Hand Completed',
                 'summary': event_notice['summary'],
