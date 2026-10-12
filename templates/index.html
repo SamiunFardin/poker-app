@@ -2,46 +2,1026 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casino Lounge - Select Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Texas Hold'em Poker Lounge</title>
     <style>
-        body { background: #0a0c10; color: #fff; font-family: sans-serif; text-align: center; padding: 30px; }
-        .game-grid { display: flex; justify-content: center; gap: 20px; margin-top: 40px; flex-wrap: wrap; }
-        .game-card { background: #161920; border: 2px solid #f39c12; border-radius: 14px; padding: 25px; width: 280px; cursor: pointer; transition: transform 0.2s; }
-        .game-card:hover { transform: translateY(-5px); background: #1f2430; }
-        h1 { color: #f39c12; }
+        :root {
+            --bg-dark: #0a0c10;
+            --panel-bg: rgba(22, 25, 32, 0.95);
+            --panel-border: rgba(243, 156, 18, 0.25);
+            --felt-gradient: radial-gradient(ellipse at center, #1e6b3b 0%, #114223 75%, #082112 100%);
+            --rim-color: #2b180d;
+            --rim-border: #4a2817;
+            --accent-gold: #f39c12;
+            --accent-gold-bright: #f1c40f;
+            --btn-green: #27ae60;
+            --btn-red: #e74c3c;
+            --btn-blue: #2980b9;
+            --card-w: 46px;
+            --card-h: 64px;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 20%, #182030 0%, #0a0c10 70%);
+            color: #ecf0f1;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container { width: 100%; max-width: 1050px; }
+
+        .card-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 22px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(8px);
+        }
+
+        .hidden { display: none !important; }
+
+        input[type="text"], input[type="number"], select {
+            padding: 12px 14px;
+            margin: 8px 0;
+            border-radius: 10px;
+            border: 1px solid #34495e;
+            background: #0d0f14;
+            color: #fff;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--accent-gold); }
+
+        button {
+            padding: 11px 20px;
+            margin: 4px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.2s ease, opacity 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        button:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
+        button:disabled {
+            background: #232836 !important;
+            color: #555c6e !important;
+            cursor: not-allowed !important;
+            opacity: 0.4 !important;
+            filter: grayscale(1) !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-green { background: var(--btn-green); color: #fff; box-shadow: 0 4px 14px rgba(39, 174, 96, 0.4); }
+        .btn-red { background: var(--btn-red); color: #fff; box-shadow: 0 4px 14px rgba(231, 76, 60, 0.4); }
+        .btn-blue { background: var(--btn-blue); color: #fff; box-shadow: 0 4px 14px rgba(41, 128, 185, 0.4); }
+        .btn-gold { background: var(--accent-gold); color: #000; box-shadow: 0 4px 14px rgba(243, 156, 18, 0.4); }
+
+        .lounge-header { text-align: center; margin-bottom: 25px; }
+        .lounge-header h1 {
+            font-size: 36px;
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 8px 0;
+            text-shadow: 0 4px 20px rgba(243,156,18,0.3);
+        }
+        .lounge-header p { color: #95a5a6; font-size: 14px; margin: 0; }
+
+        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
+
+        .avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+        .avatar-opt {
+            font-size: 22px; padding: 6px 10px; background: #0d0f14; border: 2px solid transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .avatar-opt.selected { border-color: var(--accent-gold); background: #222a36; transform: scale(1.08); }
+
+        .poker-table-container {
+            position: relative; width: 100%; height: 500px; margin: 15px 0; display: flex; justify-content: center; align-items: center;
+        }
+
+        .poker-table {
+            position: relative; width: 86%; height: 340px; background: var(--felt-gradient); border: 14px solid var(--rim-color); outline: 3px solid var(--rim-border); border-radius: 190px; box-shadow: inset 0 0 60px rgba(0,0,0,0.9), 0 16px 45px rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .pot-badge {
+            font-size: 16px; font-weight: 800; color: var(--accent-gold-bright); background: rgba(10, 12, 16, 0.88); padding: 8px 22px; border-radius: 24px; border: 1px solid var(--accent-gold); margin-bottom: 12px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+
+        .pot-chips-graphic { display: flex; gap: 4px; justify-content: center; margin-top: 2px; }
+        .mini-chip { width: 14px; height: 14px; border-radius: 50%; border: 2px dashed #fff; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .mini-chip.red { background: #e74c3c; }
+        .mini-chip.gold { background: #f39c12; }
+        .mini-chip.blue { background: #2980b9; }
+
+        /* Flying Animated Chips */
+        .flying-chip {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #f1c40f;
+            border-radius: 50%;
+            border: 3px dashed #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+            z-index: 100;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .community-cards { display: flex; gap: 8px; min-height: var(--card-h); }
+
+        .card-graphic {
+            width: var(--card-w); height: var(--card-h); background: #ffffff; border-radius: 6px; display: inline-flex; flex-direction: column; justify-content: space-between; padding: 4px; box-sizing: border-box; color: #111; font-weight: bold; font-size: 12px; user-select: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); perspective: 1000px; animation: cardFlip 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes cardFlip {
+            from { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+            to { transform: rotateY(0deg) scale(1); opacity: 1; }
+        }
+        .card-graphic.red { color: #e74c3c; }
+        .card-graphic.black { color: #2c3e50; }
+        .card-graphic.winning-highlight { border: 2px solid var(--accent-gold-bright); box-shadow: 0 0 18px var(--accent-gold-bright); transform: scale(1.08); }
+        .card-back { background: repeating-linear-gradient(135deg, #2980b9, #2980b9 8px, #3498db 8px, #3498db 16px); border: 2px solid #fff; }
+
+        .seat {
+            position: absolute; width: 130px; background: rgba(18, 22, 30, 0.96); border: 2px solid #363c4e; border-radius: 14px; padding: 9px; text-align: center; font-size: 12px; z-index: 5; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+        }
+        .seat.is-me { border-color: var(--accent-gold-bright); background: rgba(35, 30, 16, 0.96); z-index: 10; }
+        .seat.active-turn { box-shadow: 0 0 24px var(--accent-gold-bright); border-color: var(--accent-gold-bright); animation: pulseTurn 1.2s infinite alternate; }
+        @keyframes pulseTurn { from { box-shadow: 0 0 10px var(--accent-gold-bright); } to { box-shadow: 0 0 25px var(--accent-gold-bright); } }
+        .seat.folded { opacity: 0.38; filter: grayscale(0.85); }
+
+        .seat-avatar { font-size: 22px; display: block; margin-bottom: 2px; }
+        .seat-name { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .seat-chips { color: #2ecc71; font-weight: 700; margin-top: 2px; }
+
+        .timer-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+        .timer-progress { height: 100%; background: var(--accent-gold-bright); width: 100%; transition: width 0.2s linear; }
+
+        .badge-tag { font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px; }
+        .badge-dealer { background: #f1c40f; color: #000; }
+        .badge-sb { background: #e67e22; color: #fff; }
+        .badge-bb { background: #e74c3c; color: #fff; }
+
+        .seat-0 { bottom: -5px; left: 50%; transform: translateX(-50%); }
+        .seat-1 { bottom: 50px; left: 1%; }
+        .seat-2 { top: 50px; left: 1%; }
+        .seat-3 { top: -5px; left: 50%; transform: translateX(-50%); }
+        .seat-4 { top: 50px; right: 1%; }
+        .seat-5 { bottom: 50px; right: 1%; }
+
+        .action-panel { background: var(--panel-bg); padding: 16px; border-radius: 14px; border: 1px solid var(--panel-border); text-align: center; }
+        .quick-bets { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+        .quick-bets button { padding: 6px 12px; font-size: 12px; background: #222938; }
+
+        .raise-slider-container { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; max-width: 400px; margin: 10px auto; }
+        .auto-actions { display: flex; justify-content: center; gap: 16px; font-size: 12px; color: #aaa; margin-bottom: 10px; }
+
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left; }
+        .ledger-table th, .ledger-table td { padding: 8px 10px; border: 1px solid #262a36; }
+        .ledger-table th { background: #0d0f14; color: var(--accent-gold-bright); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: #141822; padding: 24px; border-radius: 18px; max-width: 580px; width: 92%; max-height: 90vh; overflow-y: auto; text-align: center; border: 2px solid var(--accent-gold); box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+        }
+        #qrcode-canvas { margin: 15px auto; background: #fff; padding: 10px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .copy-link-box { display: flex; gap: 8px; margin-top: 10px; }
+        .copy-link-box input { margin: 0; text-align: center; font-size: 12px; }
+
+        .audio-toggle-badge {
+            position: fixed; top: 15px; right: 15px; background: rgba(22, 25, 32, 0.9); border: 1px solid var(--accent-gold); padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; z-index: 99; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
-    <h1>♠ Multi-Game Casino Lounge ♣</h1>
-    <p>Choose your game to enter the table:</p>
 
-    <div class="game-grid">
-        <div class="game-card" onclick="selectGame('texas_holdem')">
-            <h2>Texas Hold'em</h2>
-            <p>Classic High-Stakes Poker</p>
+<div class="audio-toggle-badge" onclick="toggleAudio()" id="audio-toggle-btn">
+    🔊 <span>SFX: On</span>
+</div>
+
+<div class="container">
+    <div id="lobby-section" class="card-panel">
+        <div class="lounge-header">
+            <h1>♠ Texas Hold'em Lounge ♣</h1>
+            <p>Step up to the high-stakes table. Host private rooms or join friends instantly.</p>
         </div>
-        <div class="game-card" onclick="selectGame('call_bridge')">
-            <h2>Call Bridge</h2>
-            <p>4 Players, Spades Trump</p>
-        </div>
-        <div class="game-card" onclick="selectGame('twenty_nine')">
-            <h2>29 Card Game</h2>
-            <p>Team Trick-Taking Battle</p>
+        
+        <div class="lobby-grid">
+            <div style="background: #0d0f14; padding: 18px; border-radius: 12px; border: 1px solid #262a36;">
+                <h3 style="color: var(--accent-gold); margin-top: 0; display:flex; align-items:center; gap:8px;">🎲 Host Private Table</h3>
+                <input type="text" id="host-room-id" placeholder="Room Code (e.g. VIPCLUB)">
+                <input type="text" id="host-name" placeholder="Host Admin Name" value="Host Admin">
+                
+                <label style="font-size: 13px; color: #aaa;">Turn Timer:</label>
+                <select id="turn-time-select">
+                    <option value="15">15 Seconds</option>
+                    <option value="30" selected>30 Seconds</option>
+                    <option value="45">45 Seconds</option>
+                    <option value="60">1 Minute</option>
+                    <option value="120">2 Minutes</option>
+                    <option value="300">5 Minutes</option>
+                    <option value="600">10 Minutes</option>
+                </select>
+
+                <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
+                <div class="avatar-picker" id="host-avatar-picker">
+                    <span class="avatar-opt selected" data-avatar="👑">👑</span>
+                    <span class="avatar-opt" data-avatar="😎">😎</span>
+                    <span class="avatar-opt" data-avatar="🎩">🎩</span>
+                    <span class="avatar-opt" data-avatar="🔥">🔥</span>
+                    <span class="avatar-opt" data-avatar="🎲">🎲</span>
+                    <span class="avatar-opt" data-avatar="🦁">🦁</span>
+                    <span class="avatar-opt" data-avatar="🤖">🤖</span>
+                    <span class="avatar-opt" data-avatar="🎭">🎭</span>
+                    <span class="avatar-opt" data-avatar="🦊">🦊</span>
+                    <span class="avatar-opt" data-avatar="🐉">🐉</span>
+                    <span class="avatar-opt" data-avatar="👽">👽</span>
+                    <span class="avatar-opt" data-avatar="🥷">🥷</span>
+                </div>
+
+                <div style="margin: 12px 0;">
+                    <label style="font-size: 14px; cursor: pointer; color: #fff; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="host-is-playing" onchange="toggleHostBuyin(this.checked)"> Play in game as active player
+                    </label>
+                </div>
+                <input type="number" id="host-buyin" class="hidden" placeholder="Host Starting Chips" value="1000">
+                
+                <button id="btn-create-room" class="btn-gold" style="width: 100%; margin-top: 12px;">Launch Room</button>
+            </div>
+
+            <div style="background: #0d0f14; padding: 18px; border-radius: 12px; border: 1px solid #262a36;">
+                <h3 style="color: var(--btn-green); margin-top: 0; display:flex; align-items:center; gap:8px;">♠ Join Active Table</h3>
+                <input type="text" id="join-room-id" placeholder="Enter Room Code">
+                <input type="text" id="join-name" placeholder="Your Player Name">
+                <input type="number" id="join-buyin" placeholder="Starting Chips" value="1000">
+
+                <label style="font-size: 13px; color: #aaa;">Select Avatar:</label>
+                <div class="avatar-picker" id="join-avatar-picker">
+                    <span class="avatar-opt selected" data-avatar="😎">😎</span>
+                    <span class="avatar-opt" data-avatar="🎲">🎲</span>
+                    <span class="avatar-opt" data-avatar="🦁">🦁</span>
+                    <span class="avatar-opt" data-avatar="🤖">🤖</span>
+                    <span class="avatar-opt" data-avatar="👑">👑</span>
+                    <span class="avatar-opt" data-avatar="🎩">🎩</span>
+                    <span class="avatar-opt" data-avatar="🔥">🔥</span>
+                    <span class="avatar-opt" data-avatar="🎭">🎭</span>
+                    <span class="avatar-opt" data-avatar="🦊">🦊</span>
+                    <span class="avatar-opt" data-avatar="🐉">🐉</span>
+                    <span class="avatar-opt" data-avatar="👽">👽</span>
+                    <span class="avatar-opt" data-avatar="🥷">🥷</span>
+                </div>
+
+                <button id="btn-join-room" class="btn-green" style="width: 100%; margin-top: 12px;">Take a Seat</button>
+            </div>
         </div>
     </div>
 
+    <div id="game-section" class="card-panel hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0;">Room: <span id="display-room-id" style="color: var(--accent-gold-bright);"></span></h2>
+            <div>
+                <button id="btn-show-qr" class="btn-blue hidden">QR Code & Link</button>
+                <button id="btn-add-cash-req" class="btn-green hidden">Request Cash</button>
+                <button id="btn-view-last-hand">Last Hand</button>
+                <button id="btn-exit-game" class="btn-red">Exit Game</button>
+            </div>
+        </div>
+
+        <div id="host-controls" class="card-panel hidden" style="border: 2px solid var(--accent-gold); background: #0d0f14; margin-top: 15px;">
+            <h3 style="color: var(--accent-gold-bright); margin-top: 0;">Host Table Management</h3>
+            <button id="btn-start-hand" class="btn-green">Start Next Hand</button>
+            <button id="btn-discontinue-hand" class="btn-red">Stop Current Hand</button>
+            
+            <div style="margin-top: 10px;">
+                <h4 style="margin: 5px 0;">Pending Requests (<span id="request-count">0</span>):</h4>
+                <div id="pending-requests-list"></div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <h4 style="margin: 5px 0; color: var(--accent-gold-bright);">Players Account Details (Ledger)</h4>
+                <div id="host-ledger-container" style="overflow-x: auto;"></div>
+            </div>
+        </div>
+
+        <div class="poker-table-container">
+            <div class="poker-table" id="poker-table-board">
+                <div class="pot-badge" id="pot-badge-el">
+                    <div>Total Pot: $<span id="pot-amount">0</span></div>
+                    <div class="pot-chips-graphic">
+                        <span class="mini-chip red"></span>
+                        <span class="mini-chip gold"></span>
+                        <span class="mini-chip blue"></span>
+                    </div>
+                    <div style="font-size: 11px; color: #aaa; margin-top:1px;">Street: <span id="street-name" style="color:#fff;">PREFLOP</span> | High Bet: $<span id="high-bet-amount">0</span></div>
+                </div>
+                <div class="community-cards" id="community-cards"></div>
+            </div>
+            <div id="seats-container"></div>
+        </div>
+
+        <div id="player-action-panel" class="action-panel">
+            <div class="auto-actions">
+                <label><input type="checkbox" id="auto-check-fold"> Auto Check/Fold</label>
+                <label><input type="checkbox" id="auto-call"> Auto Call Any</label>
+            </div>
+
+            <div class="quick-bets">
+                <button id="qb-min" onclick="setRaisePreset('min')">Min</button>
+                <button id="qb-25x" onclick="setRaisePreset('2.5x')">2.5x</button>
+                <button id="qb-half" onclick="setRaisePreset('half_pot')">1/2 Pot</button>
+                <button id="qb-pot" onclick="setRaisePreset('pot')">Pot</button>
+                <button id="qb-allin" onclick="setRaisePreset('allin')">All In</button>
+            </div>
+
+            <div class="raise-slider-container">
+                <span style="font-size: 12px; color: #aaa;">Raise:</span>
+                <input type="range" id="raise-slider" min="0" max="1000" step="10" value="40" oninput="syncRaiseInput(this.value)">
+                <input type="number" id="raise-amount" style="width: 90px; margin: 0;" value="40" oninput="syncRaiseSlider(this.value)">
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                <button id="btn-fold" class="btn-red">Fold</button>
+                <button id="btn-check" class="btn-blue">Check</button>
+                <button id="btn-call" class="btn-green">Call $<span id="call-amount-label">0</span></button>
+                <button id="btn-raise" class="btn-gold">Raise Target</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="popup-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 id="modal-title" style="color: var(--accent-gold-bright); margin-top:0;">Notification</h2>
+        <div id="modal-body" style="font-size: 14px; line-height: 1.5; margin: 15px 0;"></div>
+        <button id="btn-close-modal" class="btn-gold">Dismiss</button>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-    // Direct QR Code / Invite Link Handler
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviteRoom = urlParams.get('room');
-    const inviteGame = urlParams.get('game');
-    if (inviteRoom && inviteGame) {
-        window.location.href = `/game/${inviteGame}?room=${inviteRoom}`;
+    const socket = io();
+    let currentRoom = localStorage.getItem('poker_room_id') || '';
+    let sessionId = localStorage.getItem('poker_session_id') || createUUID();
+    localStorage.setItem('poker_session_id', sessionId);
+    let isHost = false;
+    let selectedHostAvatar = '👑';
+    let selectedJoinAvatar = '😎';
+    let lastHandSummaryText = "No hands played yet.";
+    let lastHandDataObj = null;
+    let latestGameState = null;
+    let timerInterval = null;
+    let audioEnabled = true;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSFX(type) {
+        if (!audioEnabled) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'card') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        } else if (type === 'chip') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, now);
+            osc.frequency.exponentialRampToValueAtTime(2200, now + 0.05);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        } else if (type === 'check') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.06);
+            osc.start(now);
+            osc.stop(now + 0.06);
+        } else if (type === 'win') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.08);
+            osc.frequency.setValueAtTime(783.99, now + 0.16);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
     }
 
-    function selectGame(gameType) {
-        window.location.href = `/game/${gameType}`;
+    function toggleAudio() {
+        audioEnabled = !audioEnabled;
+        const btn = document.getElementById('audio-toggle-btn');
+        btn.innerHTML = audioEnabled ? '🔊 <span>SFX: On</span>' : '🔇 <span>SFX: Muted</span>';
+    }
+
+    function createUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('#host-avatar-picker .avatar-opt').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedHostAvatar = el.getAttribute('data-avatar');
+        });
+    });
+
+    document.querySelectorAll('#join-avatar-picker .avatar-opt').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('#join-avatar-picker .avatar-opt').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedJoinAvatar = el.getAttribute('data-avatar');
+        });
+    });
+
+    function toggleHostBuyin(checked) {
+        document.getElementById('host-buyin').classList.toggle('hidden', !checked);
+    }
+
+    socket.on('connect', () => {
+        if (currentRoom) {
+            socket.emit('reconnect_session', { room_id: currentRoom, session_id: sessionId });
+        }
+    });
+
+    socket.on('session_restored', (data) => {
+        if (data.success) {
+            currentRoom = data.room_id;
+            isHost = data.is_host;
+            document.getElementById('lobby-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = currentRoom;
+
+            if (isHost) {
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('btn-show-qr').classList.remove('hidden');
+            }
+            if (!isHost || data.host_is_playing) {
+                document.getElementById('btn-add-cash-req').classList.remove('hidden');
+            }
+        } else {
+            localStorage.removeItem('poker_room_id');
+        }
+    });
+
+    function renderCardGraphic(card, isWinning = false) {
+        if (!card) return `<div class="card-graphic card-back"></div>`;
+        const suitsMap = { 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣' };
+        const symbol = suitsMap[card.suit] || card.suit;
+        const isRed = ['♥', '♦', 'H', 'D'].includes(card.suit);
+
+        return `
+            <div class="card-graphic ${isRed ? 'red' : 'black'} ${isWinning ? 'winning-highlight' : ''}">
+                <div>${card.rank}</div>
+                <div style="text-align:center; font-size: 15px;">${symbol}</div>
+                <div style="text-align:right;">${card.rank}</div>
+            </div>
+        `;
+    }
+
+    // Flying Chip Animation Function
+    function animateFlyingChips(sid) {
+        playSFX('chip');
+        const seatEl = document.getElementById(`seat-box-${sid}`);
+        const potEl = document.getElementById('pot-badge-el');
+        if (!seatEl || !potEl) return;
+
+        const seatRect = seatEl.getBoundingClientRect();
+        const potRect = potEl.getBoundingClientRect();
+
+        const chip = document.createElement('div');
+        chip.className = 'flying-chip';
+        document.body.appendChild(chip);
+
+        chip.style.left = (seatRect.left + seatRect.width / 2 - 12) + 'px';
+        chip.style.top = (seatRect.top + seatRect.height / 2 - 12) + 'px';
+
+        setTimeout(() => {
+            chip.style.left = (potRect.left + potRect.width / 2 - 12) + 'px';
+            chip.style.top = (potRect.top + potRect.height / 2 - 12) + 'px';
+            chip.style.transform = 'scale(1.2) rotate(360deg)';
+            chip.style.opacity = '0.3';
+        }, 30);
+
+        setTimeout(() => {
+            chip.remove();
+        }, 650);
+    }
+
+    socket.on('animate_flying_chips', (data) => {
+        animateFlyingChips(data.sid);
+    });
+
+    document.getElementById('btn-create-room').addEventListener('click', () => {
+        const roomId = document.getElementById('host-room-id').value.trim().toUpperCase();
+        const hostName = document.getElementById('host-name').value.trim();
+        const isPlaying = document.getElementById('host-is-playing').checked;
+        const hostBuyin = parseFloat(document.getElementById('host-buyin').value) || 1000;
+        const turnTime = parseInt(document.getElementById('turn-time-select').value) || 30;
+
+        if (!roomId) return alert('Enter room code');
+        currentRoom = roomId;
+        localStorage.setItem('poker_room_id', currentRoom);
+        playSFX('chip');
+        socket.emit('create_room', {
+            room_id: roomId,
+            host_name: hostName,
+            avatar: selectedHostAvatar,
+            host_is_playing: isPlaying,
+            host_buyin: hostBuyin,
+            turn_time: turnTime,
+            session_id: sessionId
+        });
+    });
+
+    document.getElementById('btn-join-room').addEventListener('click', () => {
+        const roomId = document.getElementById('join-room-id').value.trim().toUpperCase();
+        const playerName = document.getElementById('join-name').value.trim();
+        const buyIn = parseFloat(document.getElementById('join-buyin').value) || 1000;
+        if (!roomId || !playerName) return alert('Enter Room Code and Player Name');
+        currentRoom = roomId;
+        localStorage.setItem('poker_room_id', currentRoom);
+        playSFX('chip');
+        socket.emit('join_room_request', {
+            room_id: roomId,
+            player_name: playerName,
+            avatar: selectedJoinAvatar,
+            buy_in: buyIn,
+            session_id: sessionId
+        });
+    });
+
+    document.getElementById('btn-show-qr').addEventListener('click', () => {
+        playSFX('card');
+        const joinUrl = window.location.origin + '?room=' + currentRoom;
+        showModal('Scan or Share Game Link', `
+            <p style="margin:5px 0; color:#aaa;">Players can scan this QR code or copy the link below:</p>
+            <div id="qrcode-canvas"></div>
+            <div class="copy-link-box">
+                <input type="text" id="share-link-input" value="${joinUrl}" readonly>
+                <button class="btn-gold" onclick="copyGameLink()">Copy Link</button>
+            </div>
+        `);
+        setTimeout(() => {
+            document.getElementById('qrcode-canvas').innerHTML = '';
+            new QRCode(document.getElementById('qrcode-canvas'), { text: joinUrl, width: 160, height: 160 });
+        }, 100);
+    });
+
+    function copyGameLink() {
+        const input = document.getElementById('share-link-input');
+        if (input) {
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("Game link copied to clipboard!");
+        }
+    }
+
+    document.getElementById('btn-start-hand').addEventListener('click', () => {
+        playSFX('card');
+        socket.emit('start_hand', { room_id: currentRoom });
+    });
+
+    document.getElementById('btn-discontinue-hand').addEventListener('click', () => {
+        if (confirm("Discontinue current hand?")) socket.emit('discontinue_hand', { room_id: currentRoom });
+    });
+
+    document.getElementById('btn-exit-game').addEventListener('click', () => {
+        if (isHost) {
+            if (confirm("Exiting as Host will close the room for everyone. Are you sure?")) {
+                socket.emit('close_room_by_host', { room_id: currentRoom });
+            }
+        } else {
+            if (confirm("Exit game table?")) {
+                socket.emit('leave_game', { room_id: currentRoom });
+                localStorage.removeItem('poker_room_id');
+                location.reload();
+            }
+        }
+    });
+
+    document.getElementById('btn-add-cash-req').addEventListener('click', () => {
+        const amt = prompt("Enter cash amount:", "500");
+        if (amt && !isNaN(amt)) {
+            playSFX('chip');
+            socket.emit('request_add_cash', { room_id: currentRoom, amount: parseFloat(amt) });
+        }
+    });
+
+    document.getElementById('btn-view-last-hand').addEventListener('click', () => {
+        renderLastHandModal();
+    });
+
+    function renderLastHandModal() {
+        if (!lastHandDataObj) {
+            showModal('Last Hand History', `<p style="color:#aaa;">${lastHandSummaryText}</p>`);
+            return;
+        }
+
+        let ccHtml = (lastHandDataObj.community_cards || []).map(c => renderCardGraphic(c)).join('');
+        let playersHtml = (lastHandDataObj.players_show || []).map(p => {
+            let cards = (p.hole_cards || []).map(c => renderCardGraphic(c)).join('');
+            return `
+                <div style="background:#1a1d26; padding:8px; border-radius:8px; margin:6px 0; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>${p.avatar || '😎'} ${p.name}</strong>
+                        <div style="font-size:11px; color:var(--accent-gold);">${p.eval}</div>
+                    </div>
+                    <div style="display:flex; gap:3px;">${cards}</div>
+                </div>
+            `;
+        }).join('');
+
+        showModal('Last Hand Complete Breakdown', `
+            <div style="margin-bottom:12px;">
+                <h4 style="margin:5px 0; color:var(--accent-gold-bright);">Community Board</h4>
+                <div style="display:flex; justify-content:center; gap:4px;">${ccHtml || 'None'}</div>
+            </div>
+            <div style="text-align:left;">
+                <h4 style="margin:5px 0; color:#fff;">Players & Evaluations</h4>
+                ${playersHtml}
+            </div>
+        `);
+    }
+
+    document.getElementById('btn-check').addEventListener('click', () => {
+        if (!document.getElementById('btn-check').disabled) {
+            playSFX('check');
+            sendAction('check');
+        }
+    });
+    document.getElementById('btn-call').addEventListener('click', () => {
+        if (!document.getElementById('btn-call').disabled) {
+            animateFlyingChips(socket.id);
+            sendAction('call');
+        }
+    });
+    document.getElementById('btn-fold').addEventListener('click', () => {
+        if (!document.getElementById('btn-fold').disabled) {
+            playSFX('card');
+            sendAction('fold');
+        }
+    });
+    document.getElementById('btn-raise').addEventListener('click', () => {
+        if (!document.getElementById('btn-raise').disabled) {
+            animateFlyingChips(socket.id);
+            const amt = parseFloat(document.getElementById('raise-amount').value) || 0;
+            sendAction('raise', amt);
+        }
+    });
+
+    function syncRaiseInput(val) {
+        document.getElementById('raise-amount').value = val;
+    }
+    function syncRaiseSlider(val) {
+        document.getElementById('raise-slider').value = val;
+    }
+
+    function setRaisePreset(type) {
+        playSFX('chip');
+        if (!latestGameState) return;
+        const myPlayer = latestGameState.players.find(p => p.sid === socket.id);
+        if (!myPlayer) return;
+
+        let target = latestGameState.highest_bet;
+        if (type === 'min') target = latestGameState.highest_bet + latestGameState.bb;
+        else if (type === '2.5x') target = Math.max(latestGameState.bb * 2.5, latestGameState.highest_bet * 2.5);
+        else if (type === 'half_pot') target = latestGameState.highest_bet + (latestGameState.pot / 2);
+        else if (type === 'pot') target = latestGameState.highest_bet + latestGameState.pot;
+        else if (type === 'allin') target = myPlayer.chips + myPlayer.current_bet;
+
+        const roundTarget = Math.round(target);
+        document.getElementById('raise-amount').value = roundTarget;
+        document.getElementById('raise-slider').value = roundTarget;
+    }
+
+    function sendAction(action, amount = 0) {
+        socket.emit('player_action', { room_id: currentRoom, action: action, amount: amount });
+    }
+
+    function showModal(title, htmlContent) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-body').innerHTML = htmlContent;
+        document.getElementById('popup-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('btn-close-modal').addEventListener('click', () => {
+        document.getElementById('popup-modal').classList.add('hidden');
+    });
+
+    socket.on('room_created', (data) => {
+        isHost = true;
+        document.getElementById('lobby-section').classList.add('hidden');
+        document.getElementById('game-section').classList.remove('hidden');
+        document.getElementById('host-controls').classList.remove('hidden');
+        document.getElementById('btn-show-qr').classList.remove('hidden');
+        document.getElementById('display-room-id').innerText = data.room_id;
+        if (data.host_is_playing) document.getElementById('btn-add-cash-req').classList.remove('hidden');
+    });
+
+    socket.on('join_pending', (data) => showModal('Request Sent', `<p>${data.message}</p>`));
+
+    socket.on('join_approved', (data) => {
+        document.getElementById('lobby-section').classList.add('hidden');
+        document.getElementById('game-section').classList.remove('hidden');
+        document.getElementById('btn-add-cash-req').classList.remove('hidden');
+        document.getElementById('display-room-id').innerText = data.room_id;
+    });
+
+    socket.on('kicked', (data) => {
+        alert(data.message);
+        localStorage.removeItem('poker_room_id');
+        location.reload();
+    });
+
+    socket.on('notification', (data) => showModal(data.title, `<p>${data.message}</p>`));
+
+    socket.on('hand_result_popup', (data) => {
+        playSFX('win');
+        lastHandDataObj = data.hand_data;
+        lastHandSummaryText = data.summary;
+        renderLastHandModal();
+    });
+
+    socket.on('room_closed', (data) => {
+        localStorage.removeItem('poker_room_id');
+        let ledgerHtml = renderLedgerTable(data.ledger);
+        showModal('📢 Game Ended & Room Closed', `
+            <p style="color:#e74c3c; font-weight:bold;">${data.message}</p>
+            <p style="font-size:12px; color:#aaa;">Please take a screenshot of the final ledger below:</p>
+            ${ledgerHtml}
+        `);
+        document.getElementById('btn-close-modal').onclick = () => location.reload();
+    });
+
+    function renderLedgerTable(ledger) {
+        if (!ledger || ledger.length === 0) return '<p>No ledger history.</p>';
+        let rows = ledger.map(p => {
+            const netColor = p.net_pl >= 0 ? '#2ecc71' : '#e74c3c';
+            const sign = p.net_pl >= 0 ? '+' : '';
+            return `
+                <tr>
+                    <td>${p.avatar || '😎'} <strong>${p.name}</strong> <span style="font-size:10px; color:#aaa;">(${p.status})</span></td>
+                    <td>$${p.initial_buy_in.toFixed(0)}</td>
+                    <td>$${p.added_cash.toFixed(0)}</td>
+                    <td>$${p.chips.toFixed(0)}</td>
+                    <td style="color:${netColor}; font-weight:bold;">${sign}$${p.net_pl.toFixed(0)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Initial</th>
+                        <th>Added</th>
+                        <th>Chips</th>
+                        <th>Net P/L</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+    socket.on('game_state', (state) => {
+        latestGameState = state;
+        if (state.last_hand_data) lastHandDataObj = state.last_hand_data;
+        lastHandSummaryText = state.last_hand_summary || 'No hands completed yet.';
+
+        document.getElementById('pot-amount').innerText = state.pot.toFixed(0);
+        document.getElementById('high-bet-amount').innerText = state.highest_bet.toFixed(0);
+        document.getElementById('street-name').innerText = state.street;
+
+        if (state.is_host) {
+            const listContainer = document.getElementById('pending-requests-list');
+            listContainer.innerHTML = '';
+
+            const joins = state.pending_joins || [];
+            const cashes = state.pending_add_cash || [];
+            document.getElementById('request-count').innerText = joins.length + cashes.length;
+
+            if (joins.length === 0 && cashes.length === 0) {
+                listContainer.innerHTML = '<p style="color:#aaa; font-size:12px;">No pending requests.</p>';
+            } else {
+                joins.forEach(p => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;';
+                    card.innerHTML = `<span><strong>Join:</strong> ${p.avatar || ''} ${p.name} ($${p.buy_in})</span>`;
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-green';
+                    btn.innerText = 'Approve';
+                    btn.onclick = () => { playSFX('chip'); socket.emit('approve_join', { room_id: currentRoom, sid: p.sid }); };
+                    card.appendChild(btn);
+                    listContainer.appendChild(card);
+                });
+
+                cashes.forEach(c => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:#1a1d26; padding:6px 10px; margin:4px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;';
+                    card.innerHTML = `<span><strong>Cash:</strong> ${c.name} (+$${c.amount})</span>`;
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-green';
+                    btn.innerText = 'Approve';
+                    btn.onclick = () => { playSFX('chip'); socket.emit('approve_add_cash', { room_id: currentRoom, sid: c.sid, amount: c.amount }); };
+                    card.appendChild(btn);
+                    listContainer.appendChild(card);
+                });
+            }
+
+            document.getElementById('host-ledger-container').innerHTML = renderLedgerTable(state.ledger_summary);
+        }
+
+        const ccContainer = document.getElementById('community-cards');
+        ccContainer.innerHTML = '';
+        const winningList = state.winning_cards || [];
+
+        for (let i = 0; i < 5; i++) {
+            const card = (state.community_cards && state.community_cards[i]) ? state.community_cards[i] : null;
+            const isWin = card && winningList.some(w => w.rank === card.rank && w.suit === card.suit);
+            ccContainer.innerHTML += renderCardGraphic(card, isWin);
+        }
+
+        const seatsContainer = document.getElementById('seats-container');
+        seatsContainer.innerHTML = '';
+
+        let myCurrentBet = 0;
+        let myChips = 1000;
+        let amIPlaying = false;
+
+        if (timerInterval) clearInterval(timerInterval);
+
+        state.players.forEach((p, idx) => {
+            const isMe = (p.sid === socket.id);
+            if (isMe) {
+                myCurrentBet = p.current_bet;
+                myChips = p.chips;
+                amIPlaying = true;
+            }
+
+            const isTurn = (p.sid === state.current_turn_sid);
+            
+            let cardsHtml = '';
+            if (isMe && p.hole_cards && p.hole_cards.length > 0) {
+                cardsHtml = p.hole_cards.map(c => {
+                    const isWin = winningList.some(w => w.rank === c.rank && w.suit === c.suit);
+                    return renderCardGraphic(c, isWin);
+                }).join('');
+            } else if (state.street === 'SHOWDOWN' && p.hole_cards && p.hole_cards.length > 0) {
+                cardsHtml = p.hole_cards.map(c => {
+                    const isWin = winningList.some(w => w.rank === c.rank && w.suit === c.suit);
+                    return renderCardGraphic(c, isWin);
+                }).join('');
+            }
+
+            let badges = '';
+            if (p.is_dealer) badges += `<span class="badge-tag badge-dealer">D</span>`;
+            if (p.is_sb) badges += `<span class="badge-tag badge-sb">SB</span>`;
+            if (p.is_bb) badges += `<span class="badge-tag badge-bb">BB</span>`;
+
+            let kickBtnHtml = (state.is_host && !isMe) 
+                ? `<button class="btn-red" style="padding:1px 5px; font-size:10px; margin-top:2px;" onclick="kickPlayer('${p.sid}')">Kick</button>` 
+                : '';
+
+            seatsContainer.innerHTML += `
+                <div class="seat seat-${idx % 6} ${isMe ? 'is-me' : ''} ${isTurn ? 'active-turn' : ''} ${p.folded ? 'folded' : ''}" id="seat-box-${p.sid}">
+                    <span class="seat-avatar">${p.avatar || '😎'}</span>
+                    <div class="seat-name">${p.name} ${badges}</div>
+                    <div class="seat-chips">$${p.chips.toFixed(0)}</div>
+                    <div style="font-size:10px; color:#aaa;">Bet: $${p.current_bet.toFixed(0)}</div>
+                    ${isTurn && state.in_progress ? `<div class="timer-bar"><div class="timer-progress" id="timer-prog-${p.sid}"></div></div>` : ''}
+                    ${cardsHtml ? `<div style="display:flex; justify-content:center; gap:2px; margin-top:4px;">${cardsHtml}</div>` : ''}
+                    ${kickBtnHtml}
+                </div>
+            `;
+        });
+
+        if (state.in_progress && state.current_turn_sid && state.turn_start_time) {
+            const timeLimit = state.turn_time || 30;
+            const myTurnNow = (socket.id === state.current_turn_sid);
+
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() / 1000) - state.turn_start_time;
+                const remaining = Math.max(0, timeLimit - elapsed);
+                const pct = (remaining / timeLimit) * 100;
+                
+                const progEl = document.getElementById(`timer-prog-${state.current_turn_sid}`);
+                if (progEl) progEl.style.width = pct + '%';
+
+                if (remaining <= 0 && myTurnNow) {
+                    clearInterval(timerInterval);
+                    if (document.getElementById('auto-check-fold').checked || myCurrentBet < state.highest_bet) {
+                        sendAction('fold');
+                    } else {
+                        sendAction('check');
+                    }
+                }
+            }, 200);
+        }
+
+        document.getElementById('player-action-panel').classList.toggle('hidden', !amIPlaying);
+
+        const callNeeded = Math.max(0, state.highest_bet - myCurrentBet);
+        document.getElementById('call-amount-label').innerText = callNeeded.toFixed(0);
+
+        if (amIPlaying) {
+            const myTurn = (socket.id === state.current_turn_sid) && state.in_progress;
+            
+            const btnCheck = document.getElementById('btn-check');
+            const btnCall = document.getElementById('btn-call');
+            const btnFold = document.getElementById('btn-fold');
+            const btnRaise = document.getElementById('btn-raise');
+            
+            const qbMin = document.getElementById('qb-min');
+            const qb25 = document.getElementById('qb-25x');
+            const qbHalf = document.getElementById('qb-half');
+            const qbPot = document.getElementById('qb-pot');
+            const qbAllin = document.getElementById('qb-allin');
+
+            const canCheck = myTurn && (callNeeded === 0);
+            btnCheck.disabled = !canCheck;
+
+            const canCall = myTurn && (callNeeded > 0) && (myChips > 0);
+            btnCall.disabled = !canCall;
+
+            btnFold.disabled = !myTurn;
+
+            const minRaiseTarget = state.highest_bet + state.bb;
+            const neededForMinRaise = minRaiseTarget - myCurrentBet;
+            const canRaise = myTurn && (myChips >= neededForMinRaise);
+
+            btnRaise.disabled = !canRaise;
+            qbMin.disabled = !canRaise;
+            qb25.disabled = !canRaise;
+            qbHalf.disabled = !canRaise;
+            qbPot.disabled = !canRaise;
+            qbAllin.disabled = !myTurn || (myChips <= 0);
+
+            const slider = document.getElementById('raise-slider');
+            slider.min = minRaiseTarget;
+            slider.max = myChips + myCurrentBet;
+
+            if (myTurn) {
+                if (document.getElementById('auto-check-fold').checked) {
+                    if (callNeeded === 0) sendAction('check');
+                    else sendAction('fold');
+                } else if (document.getElementById('auto-call').checked) {
+                    if (callNeeded === 0) sendAction('check');
+                    else sendAction('call');
+                }
+            }
+        }
+    });
+
+    function kickPlayer(targetSid) {
+        if (confirm("Kick player from game?")) {
+            socket.emit('kick_player', { room_id: currentRoom, target_sid: targetSid });
+        }
+    }
+
+    socket.on('error', (err) => showModal('Error', `<p>${err.message}</p>`));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoom = urlParams.get('room');
+    if (urlRoom) {
+        document.getElementById('join-room-id').value = urlRoom.toUpperCase();
     }
 </script>
 </body>
