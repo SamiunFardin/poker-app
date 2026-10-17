@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cloud Poker Night</title>
   <script src="https://cdn.socket.io/4.7.5/socketio.min.js"></script>
-  <!-- QRCode.js for generating QR codes -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -17,19 +16,16 @@
     .btn-success { background: #16a34a; } .btn-success:hover { background: #15803d; }
     .btn-secondary { background: #475569; } .btn-secondary:hover { background: #334155; }
     
-    /* Homepage Layout */
     .home-buttons { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
     .form-section { display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; }
     .form-input { width: 100%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; }
 
-    /* Poker Table Design with Dynamic Seating */
     .poker-table { background: #065f46; border: 12px solid #042f2e; border-radius: 180px; width: 100%; height: 420px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 30px 0; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
     .pot-display { font-size: 1.5rem; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 20px; color: #fbbf24; margin-bottom: 15px; border: 1px solid #047857; }
     .community-cards { display: flex; gap: 8px; min-height: 70px; }
     .poker-card { background: white; color: black; border-radius: 6px; width: 48px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 1px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
     .poker-card.red { color: #dc2626; }
     
-    /* Seating layout container */
     .seats-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
     .seat { position: absolute; background: #1e293b; border: 2px solid #38bdf8; border-radius: 8px; padding: 8px 10px; text-align: center; pointer-events: auto; width: 130px; font-size: 0.9rem; transform: translate(-50%, -50%); transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
     .seat.active-turn { border-color: #f59e0b; box-shadow: 0 0 20px #f59e0b; background: #334155; }
@@ -37,17 +33,14 @@
     .seat-card-mini { background: white; color: black; font-size: 0.7rem; width: 18px; height: 24px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
     .seat-card-mini.red { color: #dc2626; }
 
-    /* Game Layout Grid */
     .game-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
     @media(max-width: 768px) { .game-grid { grid-template-columns: 1fr; } }
 
-    /* Live Chat Box */
     .chat-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; height: 350px; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px; }
     .chat-input-area { display: flex; padding: 10px; border-top: 1px solid #334155; gap: 8px; }
     .chat-input-area input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #334155; background: #1e293b; color: #fff; }
 
-    /* Modals */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; }
     .modal-content { background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 550px; width: 90%; border: 1px solid #334155; box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
   </style>
@@ -97,16 +90,13 @@
     </div>
 
     <div class="game-grid">
-      <!-- Left Column: Table & Actions -->
       <div>
-        <!-- Poker Table -->
         <div class="poker-table">
           <div class="pot-display">Pot: $<span id="pot-amount">0</span></div>
           <div class="community-cards" id="community-cards-container"></div>
           <div class="seats-container" id="seats-container"></div>
         </div>
 
-        <!-- Player Action Bar -->
         <div id="action-bar" style="text-align: center; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
           <h3>Your Hole Cards</h3>
           <div class="community-cards" id="hole-cards-container" style="justify-content: center; margin: 10px 0;"></div>
@@ -119,16 +109,13 @@
           </div>
         </div>
 
-        <!-- Host Admin Panel -->
         <div id="host-admin-requests" style="margin-top: 15px; display: none; border-top: 1px solid #334155; padding-top: 15px;">
           <h3>Pending Join Requests</h3>
           <div id="pending-requests-list" style="margin-top: 8px;"></div>
         </div>
       </div>
 
-      <!-- Right Column: Invite & Live Chat -->
       <div style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- Invite Card -->
         <div style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
           <h4 style="margin-bottom: 8px;">Invite Friends</h4>
           <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">Share link or scan QR code:</p>
@@ -136,7 +123,6 @@
           <input type="text" id="share-link" readonly style="width: 100%; padding: 6px; font-size: 0.8rem; background: #1e293b; border: 1px solid #334155; color: #38bdf8; border-radius: 4px; text-align: center;" onclick="this.select()">
         </div>
 
-        <!-- Live Chat -->
         <div class="chat-box">
           <div style="padding: 10px; background: #1e293b; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.9rem;">Table Chat</div>
           <div class="chat-messages" id="chat-messages"></div>
@@ -149,7 +135,6 @@
     </div>
   </div>
 
-  <!-- Notification Overlay Modal -->
   <div id="modal-popup" class="modal">
     <div class="modal-content">
       <h2 id="modal-title">Notification</h2>
@@ -164,7 +149,6 @@
     let myPlayerName = "";
     let isHost = false;
 
-    // Web Audio API sound cue generator
     function playSound(type) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -174,7 +158,7 @@
         gain.connect(ctx.destination);
 
         if (type === 'turn') {
-          osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
           gain.gain.setValueAtTime(0.1, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
           osc.start();
@@ -189,11 +173,10 @@
           osc.stop(ctx.currentTime + 0.5);
         }
       } catch (e) {
-        console.log("Audio Context blocked or not supported");
+        console.log("Audio Context blocked");
       }
     }
 
-    // Auto-detect room code from URL query parameters for direct join links / QR codes
     window.onload = function() {
       const urlParams = new URLSearchParams(window.location.search);
       const roomParam = urlParams.get('room');
@@ -264,7 +247,6 @@
       const shareUrl = window.location.origin + window.location.pathname + "?room=" + roomId;
       document.getElementById('share-link').value = shareUrl;
       
-      // Generate QR Code
       const qrContainer = document.getElementById('qrcode');
       qrContainer.innerHTML = '';
       new QRCode(qrContainer, { text: shareUrl, width: 100, height: 100 });
@@ -278,12 +260,10 @@
     socket.on('game_state_update', (state) => {
       document.getElementById('pot-amount').innerText = state.pot;
       
-      // Render Community Cards
       const commContainer = document.getElementById('community-cards-container');
       commContainer.innerHTML = '';
       state.community_cards.forEach(c => commContainer.appendChild(createCardUI(c)));
 
-      // Render Dynamic Circular Seats
       const seatsContainer = document.getElementById('seats-container');
       seatsContainer.innerHTML = '';
       const totalPlayers = state.players.length;
@@ -292,14 +272,11 @@
         const div = document.createElement('div');
         div.className = `seat ${p.sid === state.current_turn_sid ? 'active-turn' : ''}`;
         
-        // Dynamic trigonometric positioning around oval table
         const angle = (idx / Math.max(totalPlayers, 1)) * 2 * Math.PI - Math.PI / 2;
-        const rx = 38; // percentage radius X
-        const ry = 36; // percentage radius Y
-        const leftPos = 50 + rx * Math.cos(angle);
-        const topPos = 50 + ry * Math.sin(angle);
-        div.style.left = `${leftPos}%`;
-        div.style.top = `${topPos}%`;
+        const rx = 38;
+        const ry = 36;
+        div.style.left = `${50 + rx * Math.cos(angle)}%`;
+        div.style.top = `${50 + ry * Math.sin(angle)}%`;
 
         let cardsHtml = '';
         if (p.hole_cards && p.hole_cards.length > 0) {
@@ -317,7 +294,6 @@
         }
         seatsContainer.appendChild(div);
 
-        // Render My Hole Cards in Action Bar
         if (p.sid === socket.id) {
           const holeContainer = document.getElementById('hole-cards-container');
           holeContainer.innerHTML = '';
@@ -328,7 +304,6 @@
         }
       });
 
-      // Render Pending Join Requests for Host
       if (state.is_host) {
         const reqList = document.getElementById('pending-requests-list');
         reqList.innerHTML = '';
