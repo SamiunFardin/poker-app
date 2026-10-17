@@ -60,10 +60,18 @@ def on_create_room(data):
     room_id = str(data.get('room_id')).upper().strip()
     sb = float(data.get('sb', 10))
     bb = float(data.get('bb', 20))
+    host_plays = data.get('host_plays', True)
+    host_name = data.get('host_name', 'Host')
+    host_buyin = float(data.get('host_buyin', 100))
     
-    rooms[room_id] = GameRoom(room_id, request.sid, sb, bb)
+    room = GameRoom(room_id, request.sid, sb, bb)
+    rooms[room_id] = room
     join_room(room_id)
-    emit('room_created', {'room_id': room_id})
+
+    if host_plays:
+        room.add_player(request.sid, host_name, host_buyin)
+
+    emit('room_created', {'room_id': room_id, 'host_plays': host_plays})
 
 @socketio.on('request_join')
 def on_request_join(data):
