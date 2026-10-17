@@ -17,8 +17,10 @@
     .btn-secondary { background: #475569; } .btn-secondary:hover { background: #334155; }
     
     .home-buttons { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
-    .form-section { display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; }
+    .form-section { display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; text-align: left; }
     .form-input { width: 100%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { font-size: 0.9rem; color: #94a3b8; display: block; margin-bottom: 4px; }
 
     .poker-table { background: #065f46; border: 12px solid #042f2e; border-radius: 180px; width: 100%; height: 420px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 30px 0; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
     .pot-display { font-size: 1.5rem; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 20px; color: #fbbf24; margin-bottom: 15px; border: 1px solid #047857; }
@@ -61,20 +63,54 @@
 
     <!-- Create Room Form Section -->
     <div id="create-form-section" class="form-section">
-      <h3>Create a New Game Room</h3>
-      <input type="text" id="create-room-code" class="form-input" placeholder="Room Code (e.g. PKR1)">
-      <button class="btn" onclick="createRoom()">Launch Room (Host)</button>
-      <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      <h3 style="text-align: center; margin-bottom: 15px;">Create a New Game Room</h3>
+      
+      <div class="form-group">
+        <label>Room Code</label>
+        <input type="text" id="create-room-code" class="form-input" placeholder="e.g. PKR1">
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+        <input type="checkbox" id="host-plays-checkbox" checked onchange="toggleHostPlayerFields()" style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="host-plays-checkbox" style="cursor: pointer; color: #f8fafc; font-weight: 500; margin: 0;">Play as a Player at the table</label>
+      </div>
+
+      <div id="host-player-fields">
+        <div class="form-group">
+          <label>Host Player Name</label>
+          <input type="text" id="host-name-input" class="form-input" value="Host" placeholder="Your Name">
+        </div>
+        <div class="form-group">
+          <label>Starting Buy-in ($)</label>
+          <input type="number" id="host-buyin-input" class="form-input" value="100">
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn" onclick="createRoom()">Launch Room</button>
+        <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      </div>
     </div>
 
     <!-- Join Room Form Section -->
     <div id="join-form-section" class="form-section">
-      <h3>Join an Existing Room</h3>
-      <input type="text" id="room-code-input" class="form-input" placeholder="Room Code (e.g. PKR1)">
-      <input type="text" id="player-name-input" class="form-input" placeholder="Your Name">
-      <input type="number" id="buyin-input" class="form-input" placeholder="Buy-in Amount ($)" value="100">
-      <button class="btn btn-success" onclick="requestJoin()">Request to Join</button>
-      <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      <h3 style="text-align: center; margin-bottom: 15px;">Join an Existing Room</h3>
+      <div class="form-group">
+        <label>Room Code</label>
+        <input type="text" id="room-code-input" class="form-input" placeholder="e.g. PKR1">
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="player-name-input" class="form-input" placeholder="Your Name">
+      </div>
+      <div class="form-group">
+        <label>Buy-in Amount ($)</label>
+        <input type="number" id="buyin-input" class="form-input" value="100">
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn btn-success" onclick="requestJoin()">Request to Join</button>
+        <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      </div>
     </div>
   </div>
 
@@ -202,11 +238,30 @@
       document.getElementById('join-form-section').style.display = 'none';
     }
 
+    function toggleHostPlayerFields() {
+      const isChecked = document.getElementById('host-plays-checkbox').checked;
+      document.getElementById('host-player-fields').style.display = isChecked ? 'block' : 'none';
+    }
+
     function createRoom() {
       const code = document.getElementById('create-room-code').value;
       if (!code) return alert("Enter Room Code");
+      
+      const hostPlays = document.getElementById('host-plays-checkbox').checked;
+      const hostName = document.getElementById('host-name-input').value || "Host";
+      const hostBuyin = document.getElementById('host-buyin-input').value || 100;
+
       currentRoomId = code.toUpperCase();
-      socket.emit('create_room', { room_id: currentRoomId, sb: 10, bb: 20 });
+      myPlayerName = hostPlays ? hostName : "Host (Spectator)";
+
+      socket.emit('create_room', { 
+        room_id: currentRoomId, 
+        sb: 10, 
+        bb: 20,
+        host_plays: hostPlays,
+        host_name: hostName,
+        host_buyin: hostBuyin
+      });
     }
 
     function requestJoin() {
@@ -221,8 +276,12 @@
 
     socket.on('room_created', (data) => {
       isHost = true;
-      myPlayerName = "Host";
       enterGameRoom(data.room_id);
+      if (!data.host_plays) {
+        // Hide action bar for spectator host
+        document.getElementById('action-bar').style.display = 'none';
+        showModal("Room Created", "You are hosting this room as a spectator. You can start hands and manage requests from the panel.");
+      }
     });
 
     socket.on('join_requested', (data) => {
@@ -268,6 +327,8 @@
       seatsContainer.innerHTML = '';
       const totalPlayers = state.players.length;
 
+      let amIAPlayer = false;
+
       state.players.forEach((p, idx) => {
         const div = document.createElement('div');
         div.className = `seat ${p.sid === state.current_turn_sid ? 'active-turn' : ''}`;
@@ -295,6 +356,7 @@
         seatsContainer.appendChild(div);
 
         if (p.sid === socket.id) {
+          amIAPlayer = true;
           const holeContainer = document.getElementById('hole-cards-container');
           holeContainer.innerHTML = '';
           p.hole_cards.forEach(c => holeContainer.appendChild(createCardUI(c)));
@@ -303,6 +365,473 @@
           }
         }
       });
+
+      // Show/Hide action bar depending on whether the host is playing or spectating
+      if (state.is_host && !amIAPlayer) {
+        document.getElementById('action-bar').style.display = 'none';
+      }
+
+      if (state.is_host) {
+        const reqList = document.getElementById('pending-requests-list');
+        reqList.innerHTML = '';
+        if (state.pending_joins.length === 0) {
+          reqList.innerHTML = '<span style="color: #64748b; font-size: 0.9rem;">No pending requests</span>';
+        } else {
+          state.pending_joins.forEach(r => {
+            reqList.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:6px 10px; border-radius:4px; margin-bottom:5px;">
+              <span>${r.name} ($${r.buyin})</span>
+              <div>
+                <button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="respondJoin('${r.sid}', true)">Approve</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="respondJoin('${r.sid}', false)">Reject</button>
+              </div>
+            </div>`;
+          });
+        }
+      }
+
+      if (state.notification) {
+        showModal("Game Update", state.notification);
+      }
+    });
+
+    socket.on('showdown_summary', (data) => {
+      playSound('win');
+      let body = `<h3>${data.summary}</h3><hr style="border-color:#334155; margin:10px 0;"><h4>Player Hands at Showdown:</h4><div style="display:flex; flex-direction:column; gap:8px; margin-top:10px; max-height:200px; overflow-y:auto;">`;
+      
+      if (data.showdown_hands) {
+        data.showdown_hands.forEach(sh => {
+          let cardsStr = sh.hole_cards.map(c => `${c.rank}${c.suit}`).join(' ');
+          body += `<div style="background:#0f172a; padding:8px; border-radius:6px; text-align:left;"><strong>${sh.name}</strong>: [${cardsStr}] &mdash; <span style="color:#38bdf8;">${sh.desc}</span></div>`;
+        });
+      }
+      body += "</div>";
+      showModal("Showdown Results", body);
+    });
+
+    socket.on('game_ended_summary', (data) => {
+      let body = "<h3>Final Standings / Accounts</h3><table style='width:100%; margin-top:10px; border-collapse:collapse;'><tr style='border-bottom:1px solid #334155;'><th style='text-align:left; padding:6px;'>Player</th><th style='text-align:right; padding:6px;'>Final Chips</th></tr>";
+      data.players.forEach(p => {
+        body += `<tr style='border-bottom:1px solid #1e293b;'><td style='padding:6px;'>${p.name}</td><td style='text-align:right; padding:6px;'>$${p.chips}</td></tr>`;
+      });
+      body += "</table>";
+      showModal("Game Session Completed", body);
+    });
+
+    socket.on('chat_message', (data) => {
+      const chatMsgs = document.getElementById('chat-messages');
+      chatMsgs.innerHTML += `<div><strong>${data.name}:</strong> ${data.message}</div>`;
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    });
+
+    socket.on('error_msg', (d) => alert(d.message));
+
+    function startHand() { socket.emit('start_hand', { room_id: currentRoomId }); }
+    function discontinueHand() { socket.emit('discontinue_hand', { room_id: currentRoomId }); }
+    function sendAction(act) {
+      const amt = document.getElementById('raise-amount').value || 0;
+      socket.emit('player_action', { room_id: currentRoomId, action: act, amount: amt });
+    }
+    function respondJoin(sid, approve) { socket.emit('host_respond_join', { room_id: currentRoomId, target_sid: sid, approve: approve }); }
+    function kickPlayer(sid) { socket.emit('kick_player', { room_id: currentRoomId, target_sid: sid }); }
+    function endGame() { socket.emit('end_game', { room_id: currentRoomId }); }
+
+    function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      socket.emit('chat_message', { room_id: currentRoomId, name: myPlayerName || "Player", message: msg });
+      input.value = '';
+    }
+
+    function createCardUI(c) {
+      const div = document.createElement('div');
+      const isRed = (c.suit === 'h' || c.suit === 'd');
+      const suits = { 's':'♠', 'h':'♥', 'd':'♦', 'c':'♣' };
+      div.className = `poker-card ${isRed ? 'red' : ''}`;
+      div.innerHTML = `<span>${c.rank}</span><span>${suits[c.suit]}</span>`;
+      return div;
+    }
+
+    function showModal(title, text) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-body').innerHTML = text;
+      document.getElementById('modal-popup').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('modal-popup').style.display = 'none'; }
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Poker Night</title>
+  <script src="https://cdn.socket.io/4.7.5/socketio.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+    .card-panel { background: #1e293b; padding: 25px; border-radius: 12px; width: 100%; max-width: 950px; margin-bottom: 20px; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .btn { background: #2563eb; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; transition: background 0.2s; }
+    .btn:hover { background: #1d4ed8; }
+    .btn-danger { background: #dc2626; } .btn-danger:hover { background: #b91c1c; }
+    .btn-success { background: #16a34a; } .btn-success:hover { background: #15803d; }
+    .btn-secondary { background: #475569; } .btn-secondary:hover { background: #334155; }
+    
+    .home-buttons { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+    .form-section { display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; text-align: left; }
+    .form-input { width: 100%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { font-size: 0.9rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+
+    .poker-table { background: #065f46; border: 12px solid #042f2e; border-radius: 180px; width: 100%; height: 420px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 30px 0; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
+    .pot-display { font-size: 1.5rem; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 20px; color: #fbbf24; margin-bottom: 15px; border: 1px solid #047857; }
+    .community-cards { display: flex; gap: 8px; min-height: 70px; }
+    .poker-card { background: white; color: black; border-radius: 6px; width: 48px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 1px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    .poker-card.red { color: #dc2626; }
+    
+    .seats-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
+    .seat { position: absolute; background: #1e293b; border: 2px solid #38bdf8; border-radius: 8px; padding: 8px 10px; text-align: center; pointer-events: auto; width: 130px; font-size: 0.9rem; transform: translate(-50%, -50%); transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+    .seat.active-turn { border-color: #f59e0b; box-shadow: 0 0 20px #f59e0b; background: #334155; }
+    .seat-cards { display: flex; gap: 2px; justify-content: center; margin-top: 4px; }
+    .seat-card-mini { background: white; color: black; font-size: 0.7rem; width: 18px; height: 24px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .seat-card-mini.red { color: #dc2626; }
+
+    .game-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media(max-width: 768px) { .game-grid { grid-template-columns: 1fr; } }
+
+    .chat-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; height: 350px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px; }
+    .chat-input-area { display: flex; padding: 10px; border-top: 1px solid #334155; gap: 8px; }
+    .chat-input-area input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; }
+    .modal-content { background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 550px; width: 90%; border: 1px solid #334155; box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
+
+  <h1>Cloud Texas Hold'em</h1>
+
+  <!-- Homepage Lobby Panel -->
+  <div id="lobby-panel" class="card-panel" style="text-align: center;">
+    <h2>Welcome to Cloud Poker</h2>
+    <p style="color: #94a3b8; margin: 10px 0 20px 0;">Play Texas Hold'em online with your friends in real-time.</p>
+    
+    <div id="home-options" class="home-buttons">
+      <button class="btn" style="padding: 15px 30px; font-size: 1.1rem;" onclick="showCreateForm()">Create Room</button>
+      <button class="btn btn-success" style="padding: 15px 30px; font-size: 1.1rem;" onclick="showJoinForm()">Join Room</button>
+    </div>
+
+    <!-- Create Room Form Section -->
+    <div id="create-form-section" class="form-section">
+      <h3 style="text-align: center; margin-bottom: 15px;">Create a New Game Room</h3>
+      
+      <div class="form-group">
+        <label>Room Code</label>
+        <input type="text" id="create-room-code" class="form-input" placeholder="e.g. PKR1">
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+        <input type="checkbox" id="host-plays-checkbox" checked onchange="toggleHostPlayerFields()" style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="host-plays-checkbox" style="cursor: pointer; color: #f8fafc; font-weight: 500; margin: 0;">Play as a Player at the table</label>
+      </div>
+
+      <div id="host-player-fields">
+        <div class="form-group">
+          <label>Host Player Name</label>
+          <input type="text" id="host-name-input" class="form-input" value="Host" placeholder="Your Name">
+        </div>
+        <div class="form-group">
+          <label>Starting Buy-in ($)</label>
+          <input type="number" id="host-buyin-input" class="form-input" value="100">
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn" onclick="createRoom()">Launch Room</button>
+        <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      </div>
+    </div>
+
+    <!-- Join Room Form Section -->
+    <div id="join-form-section" class="form-section">
+      <h3 style="text-align: center; margin-bottom: 15px;">Join an Existing Room</h3>
+      <div class="form-group">
+        <label>Room Code</label>
+        <input type="text" id="room-code-input" class="form-input" placeholder="e.g. PKR1">
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="player-name-input" class="form-input" placeholder="Your Name">
+      </div>
+      <div class="form-group">
+        <label>Buy-in Amount ($)</label>
+        <input type="number" id="buyin-input" class="form-input" value="100">
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn btn-success" onclick="requestJoin()">Request to Join</button>
+        <button class="btn btn-secondary" onclick="resetHome()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Table Screen -->
+  <div id="game-panel" class="card-panel" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <h2>Room Code: <span id="display-room-code" style="color: #38bdf8;"></span></h2>
+      <div id="host-controls" style="display: none;">
+        <button class="btn btn-success" onclick="startHand()">Start Hand</button>
+        <button class="btn btn-danger" onclick="discontinueHand()">Discontinue Hand</button>
+        <button class="btn btn-secondary" onclick="endGame()">End Game Session</button>
+      </div>
+    </div>
+
+    <div class="game-grid">
+      <div>
+        <div class="poker-table">
+          <div class="pot-display">Pot: $<span id="pot-amount">0</span></div>
+          <div class="community-cards" id="community-cards-container"></div>
+          <div class="seats-container" id="seats-container"></div>
+        </div>
+
+        <div id="action-bar" style="text-align: center; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+          <h3>Your Hole Cards</h3>
+          <div class="community-cards" id="hole-cards-container" style="justify-content: center; margin: 10px 0;"></div>
+          <div>
+            <button class="btn btn-danger" onclick="sendAction('fold')">Fold</button>
+            <button class="btn" onclick="sendAction('check')">Check</button>
+            <button class="btn btn-success" onclick="sendAction('call')">Call</button>
+            <input type="number" id="raise-amount" placeholder="Raise Amt" style="width: 90px; padding: 6px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 4px;">
+            <button class="btn" onclick="sendAction('raise')">Raise</button>
+          </div>
+        </div>
+
+        <div id="host-admin-requests" style="margin-top: 15px; display: none; border-top: 1px solid #334155; padding-top: 15px;">
+          <h3>Pending Join Requests</h3>
+          <div id="pending-requests-list" style="margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+          <h4 style="margin-bottom: 8px;">Invite Friends</h4>
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">Share link or scan QR code:</p>
+          <div id="qrcode" style="display: flex; justify-content: center; background: white; padding: 10px; border-radius: 6px; width: fit-content; margin: 0 auto 10px auto;"></div>
+          <input type="text" id="share-link" readonly style="width: 100%; padding: 6px; font-size: 0.8rem; background: #1e293b; border: 1px solid #334155; color: #38bdf8; border-radius: 4px; text-align: center;" onclick="this.select()">
+        </div>
+
+        <div class="chat-box">
+          <div style="padding: 10px; background: #1e293b; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.9rem;">Table Chat</div>
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChat()">
+            <button class="btn" style="padding: 8px 12px; margin:0;" onclick="sendChat()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-popup" class="modal">
+    <div class="modal-content">
+      <h2 id="modal-title">Notification</h2>
+      <p id="modal-body" style="margin: 20px 0; font-size: 1.1rem; line-height: 1.5;"></p>
+      <button class="btn" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let currentRoomId = "";
+    let myPlayerName = "";
+    let isHost = false;
+
+    function playSound(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'turn') {
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.3);
+        } else if (type === 'win') {
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.setValueAtTime(554.37, ctx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        }
+      } catch (e) {
+        console.log("Audio Context blocked");
+      }
+    }
+
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      if (roomParam) {
+        showJoinForm();
+        document.getElementById('room-code-input').value = roomParam.toUpperCase();
+      }
+    };
+
+    function showCreateForm() {
+      document.getElementById('home-options').style.display = 'none';
+      document.getElementById('create-form-section').style.display = 'block';
+    }
+
+    function showJoinForm() {
+      document.getElementById('home-options').style.display = 'none';
+      document.getElementById('join-form-section').style.display = 'block';
+    }
+
+    function resetHome() {
+      document.getElementById('home-options').style.display = 'flex';
+      document.getElementById('create-form-section').style.display = 'none';
+      document.getElementById('join-form-section').style.display = 'none';
+    }
+
+    function toggleHostPlayerFields() {
+      const isChecked = document.getElementById('host-plays-checkbox').checked;
+      document.getElementById('host-player-fields').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function createRoom() {
+      const code = document.getElementById('create-room-code').value;
+      if (!code) return alert("Enter Room Code");
+      
+      const hostPlays = document.getElementById('host-plays-checkbox').checked;
+      const hostName = document.getElementById('host-name-input').value || "Host";
+      const hostBuyin = document.getElementById('host-buyin-input').value || 100;
+
+      currentRoomId = code.toUpperCase();
+      myPlayerName = hostPlays ? hostName : "Host (Spectator)";
+
+      socket.emit('create_room', { 
+        room_id: currentRoomId, 
+        sb: 10, 
+        bb: 20,
+        host_plays: hostPlays,
+        host_name: hostName,
+        host_buyin: hostBuyin
+      });
+    }
+
+    function requestJoin() {
+      const code = document.getElementById('room-code-input').value;
+      const name = document.getElementById('player-name-input').value;
+      const buyin = document.getElementById('buyin-input').value;
+      if (!code || !name || !buyin) return alert("Fill all join fields");
+      currentRoomId = code.toUpperCase();
+      myPlayerName = name;
+      socket.emit('request_join', { room_id: currentRoomId, name: name, buyin: buyin });
+    }
+
+    socket.on('room_created', (data) => {
+      isHost = true;
+      enterGameRoom(data.room_id);
+      if (!data.host_plays) {
+        // Hide action bar for spectator host
+        document.getElementById('action-bar').style.display = 'none';
+        showModal("Room Created", "You are hosting this room as a spectator. You can start hands and manage requests from the panel.");
+      }
+    });
+
+    socket.on('join_requested', (data) => {
+      showModal("Request Pending", data.message);
+    });
+
+    socket.on('join_response', (data) => {
+      if (data.approved) {
+        enterGameRoom(currentRoomId);
+        showModal("Welcome!", data.message);
+      } else {
+        showModal("Request Denied", data.message);
+        resetHome();
+      }
+    });
+
+    function enterGameRoom(roomId) {
+      document.getElementById('lobby-panel').style.display = 'none';
+      document.getElementById('game-panel').style.display = 'block';
+      document.getElementById('display-room-code').innerText = roomId;
+      
+      const shareUrl = window.location.origin + window.location.pathname + "?room=" + roomId;
+      document.getElementById('share-link').value = shareUrl;
+      
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, { text: shareUrl, width: 100, height: 100 });
+
+      if (isHost) {
+        document.getElementById('host-controls').style.display = 'block';
+        document.getElementById('host-admin-requests').style.display = 'block';
+      }
+    }
+
+    socket.on('game_state_update', (state) => {
+      document.getElementById('pot-amount').innerText = state.pot;
+      
+      const commContainer = document.getElementById('community-cards-container');
+      commContainer.innerHTML = '';
+      state.community_cards.forEach(c => commContainer.appendChild(createCardUI(c)));
+
+      const seatsContainer = document.getElementById('seats-container');
+      seatsContainer.innerHTML = '';
+      const totalPlayers = state.players.length;
+
+      let amIAPlayer = false;
+
+      state.players.forEach((p, idx) => {
+        const div = document.createElement('div');
+        div.className = `seat ${p.sid === state.current_turn_sid ? 'active-turn' : ''}`;
+        
+        const angle = (idx / Math.max(totalPlayers, 1)) * 2 * Math.PI - Math.PI / 2;
+        const rx = 38;
+        const ry = 36;
+        div.style.left = `${50 + rx * Math.cos(angle)}%`;
+        div.style.top = `${50 + ry * Math.sin(angle)}%`;
+
+        let cardsHtml = '';
+        if (p.hole_cards && p.hole_cards.length > 0) {
+          cardsHtml = '<div class="seat-cards">' + p.hole_cards.map(c => {
+            const isRed = (c.suit === 'h' || c.suit === 'd');
+            const suits = { 's':'♠', 'h':'♥', 'd':'♦', 'c':'♣' };
+            return `<div class="seat-card-mini ${isRed ? 'red' : ''}">${c.rank}${suits[c.suit]}</div>`;
+          }).join('') + '</div>';
+        }
+
+        div.innerHTML = `<strong>${p.name}</strong><br>$${p.chips}${p.folded ? '<br><span style="color:#ef4444">[FOLD]</span>' : cardsHtml}`;
+        
+        if (state.is_host && p.sid !== socket.id) {
+          div.innerHTML += `<br><button style="background:#dc2626;color:white;border:none;border-radius:4px;font-size:10px;padding:2px 6px;margin-top:2px;cursor:pointer;" onclick="kickPlayer('${p.sid}')">Kick</button>`;
+        }
+        seatsContainer.appendChild(div);
+
+        if (p.sid === socket.id) {
+          amIAPlayer = true;
+          const holeContainer = document.getElementById('hole-cards-container');
+          holeContainer.innerHTML = '';
+          p.hole_cards.forEach(c => holeContainer.appendChild(createCardUI(c)));
+          if (p.sid === state.current_turn_sid) {
+            playSound('turn');
+          }
+        }
+      });
+
+      // Show/Hide action bar depending on whether the host is playing or spectating
+      if (state.is_host && !amIAPlayer) {
+        document.getElementById('action-bar').style.display = 'none';
+      }
 
       if (state.is_host) {
         const reqList = document.getElementById('pending-requests-list');
